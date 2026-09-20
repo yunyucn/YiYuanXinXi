@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>就诊记录 - 医院信息系统</title>
+  <style>
+    /* 页面样式在后续提交中补充 */
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">医院信息系统</div>
+    <nav class="topnav">
+      <a href="index.html">首页</a>
+      <span>门诊管理</span>
+      <span class="current">就诊记录</span>
+    </nav>
+    <div class="user">门诊医生站 · 李医生</div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <nav class="side-nav">
+        <a href="index.html">系统首页</a>
+        <a href="visit-records.html" class="active">就诊记录</a>
+        <span class="disabled">电子病历</span>
+        <span class="disabled">检验检查</span>
+        <span class="disabled">药房管理</span>
+        <span class="disabled">收费结算</span>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb">
+        <a href="index.html">首页</a>
+        <span>/</span>
+        <span>门诊管理</span>
+        <span>/</span>
+        <span class="current">就诊记录</span>
+      </nav>
+
+      <section class="panel patient-panel">
+        <div class="panel-head">
+          <h2>患者基本信息</h2>
+          <span class="allergy">过敏史：青霉素</span>
+        </div>
+        <dl class="patient-info">
+          <div><dt>姓名</dt><dd>张伟</dd></div>
+          <div><dt>性别</dt><dd>男</dd></div>
+          <div><dt>年龄</dt><dd>45 岁</dd></div>
+          <div><dt>病历号</dt><dd>MR2026000123</dd></div>
+          <div><dt>医保类型</dt><dd>城镇职工基本医疗保险</dd></div>
+          <div><dt>联系电话</dt><dd>138****6621</dd></div>
+        </dl>
+      </section>
+
+      <section class="summary">
+        <div class="stat-card">
+          <span class="stat-label">就诊总次数</span>
+          <strong class="stat-value">12</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">门诊就诊</span>
+          <strong class="stat-value">8</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">急诊就诊</span>
+          <strong class="stat-value">2</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">住院就诊</span>
+          <strong class="stat-value">2</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">最近就诊时间</span>
+          <strong class="stat-value">2026-03-18</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>就诊记录列表</h2>
+        </div>
+
+        <form class="filters" id="filterForm">
+          <div class="field">
+            <label for="filterType">就诊类型</label>
+            <select id="filterType">
+              <option value="">全部</option>
+              <option value="门诊">门诊</option>
+              <option value="急诊">急诊</option>
+              <option value="住院">住院</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterDept">就诊科室</label>
+            <select id="filterDept">
+              <option value="">全部科室</option>
+              <option value="心血管内科">心血管内科</option>
+              <option value="内分泌科">内分泌科</option>
+              <option value="呼吸内科">呼吸内科</option>
+              <option value="消化内科">消化内科</option>
+              <option value="神经内科">神经内科</option>
+              <option value="骨科">骨科</option>
+              <option value="急诊内科">急诊内科</option>
+              <option value="急诊外科">急诊外科</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterStart">开始日期</label>
+            <input type="date" id="filterStart" />
+          </div>
+          <div class="field">
+            <label for="filterEnd">结束日期</label>
+            <input type="date" id="filterEnd" />
+          </div>
+          <div class="field field-keyword">
+            <label for="filterKeyword">关键字</label>
+            <input type="text" id="filterKeyword" placeholder="就诊号 / 医生 / 诊断" />
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">查询</button>
+            <button type="reset" class="btn" id="resetBtn">重置</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table class="record-table">
+            <thead>
+              <tr>
+                <th>就诊号</th>
+                <th>就诊类型</th>
+                <th>就诊科室</th>
+                <th>接诊医生</th>
+                <th>就诊时间</th>
+                <th>主诊断</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="recordBody">
+              <tr>
+                <td>MZ20260318012</td>
+                <td><span class="badge badge-outpatient">门诊</span></td>
+                <td>心血管内科</td>
+                <td>王海涛</td>
+                <td>2026-03-18 09:35</td>
+                <td>原发性高血压（2级）</td>
+                <td><span class="status status-doing">进行中</span></td>
+                <td><button type="button" class="btn-link" data-id="MZ20260318012">查看详情</button></td>
+              </tr>
+              <tr>
+                <td>MZ20260312001</td>
+                <td><span class="badge badge-outpatient">门诊</span></td>
+                <td>心血管内科</td>
+                <td>王海涛</td>
+                <td>2026-03-12 09:20</td>
+                <td>原发性高血压（2级）</td>
+                <td><span class="status status-done">已完成</span></td>
+                <td><button type="button" class="btn-link" data-id="MZ20260312001">查看详情</button></td>
+              </tr>
+              <tr>
+                <td>MZ20260308015</td>
+                <td><span class="badge badge-outpatient">门诊</span></td>
+                <td>内分泌科</td>
+                <td>李静</td>
+                <td>2026-03-08 14:05</td>
+                <td>2型糖尿病</td>
+                <td><span class="status status-done">已完成</span></td>
+                <td><button type="button" class="btn-link" data-id="MZ20260308015">查看详情</button></td>
+              </tr>
+              <tr>
+                <td>JZ20260305102</td>
+                <td><span class="badge badge-emergency">急诊</span></td>
+                <td>急诊内科</td>
+                <td>陈志远</td>
+                <td>2026-03-05 22:40</td>
+                <td>急性胃肠炎</td>
+                <td><span class="status status-done">已完成</span></td>
+                <td><button type="button" class="btn-link" data-id="JZ20260305102">查看详情</button></td>
+              </tr>
+              <tr>
+                <td>ZY20260228007</td>
+                <td><span class="badge badge-inpatient">住院</span></td>
+                <td>呼吸内科</td>
+                <td>赵敏</td>
+                <td>2026-02-28 10:15</td>
+                <td>社区获得性肺炎</td>
+                <td><span class="status status-done">已完成</span></td>
+                <td><button type="button" class="btn-link" data-id="ZY20260228007">查看详情</button></td>
+              </tr>
+              <tr>
+                <td>MZ20260220033</td>
+                <td><span class="badge badge-outpatient">门诊</span></td>
+                <td>消化内科</td>
+                <td>刘鹏</td>
+                <td>2026-02-20 08:50</td>
+                <td>慢性胃炎</td>
+                <td><span class="status status-done">已完成</span></td>
+                <td><button type="button" class="btn-link" data-id="MZ20260220033">查看详情</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span class="page-total">共 12 条记录</span>
+          <div class="page-list">
+            <button type="button" class="page-btn">上一页</button>
+            <button type="button" class="page-btn active">1</button>
+            <button type="button" class="page-btn">2</button>
+            <button type="button" class="page-btn">下一页</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="detailModal" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">就诊详情</h3>
+        <button type="button" class="modal-close" data-close="1" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-primary" data-close="1">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* 页面交互脚本在后续提交中补充 */
+  </script>
+</body>
+</html>
