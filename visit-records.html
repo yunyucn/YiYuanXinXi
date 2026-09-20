@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>就诊记录 - 医院信息系统</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      font-size: 14px;
+      background: #f4f7fb;
+      color: #1f2d3d;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+
+    /* 顶栏与侧边导航 */
+    .topbar {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 0 24px;
+      background: linear-gradient(90deg, #1c5fd0, #2f8ce0);
+      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+    .topnav { display: flex; gap: 20px; }
+    .topnav a, .topnav span { opacity: .85; }
+    .topnav a:hover { opacity: 1; text-decoration: underline; }
+    .topnav .current { opacity: 1; font-weight: 600; }
+    .user { margin-left: auto; font-size: 13px; opacity: .9; }
+
+    .layout { display: flex; min-height: calc(100vh - 60px); }
+    .sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #e3eaf3;
+      padding: 16px 12px;
+    }
+    .side-nav { display: flex; flex-direction: column; gap: 4px; }
+    .side-nav a, .side-nav span {
+      display: block;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #42526e;
+    }
+    .side-nav a:hover { background: #f0f5ff; color: #1c5fd0; }
+    .side-nav .active { background: #e8f1ff; color: #1c5fd0; font-weight: 600; }
+    .side-nav .disabled { color: #a8b4c4; cursor: not-allowed; }
+
+    /* 内容区 */
+    .content { flex: 1; min-width: 0; padding: 20px 24px 48px; }
+    .breadcrumb { display: flex; gap: 8px; font-size: 13px; color: #6b7c93; margin-bottom: 16px; }
+    .breadcrumb a:hover { color: #1c5fd0; }
+    .breadcrumb .current { color: #1f2d3d; font-weight: 600; }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #e3eaf3;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .panel-head h2 { font-size: 16px; }
+
+    /* 患者信息 */
+    .patient-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px 24px;
+    }
+    .patient-info > div { display: flex; gap: 8px; }
+    .patient-info dt { color: #6b7c93; min-width: 64px; }
+    .patient-info dd { font-weight: 600; }
+    .allergy {
+      font-size: 13px;
+      color: #d4380d;
+      background: #fff2e8;
+      border: 1px solid #ffd8bf;
+      border-radius: 12px;
+      padding: 2px 10px;
+    }
+
+    /* 统计概览 */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #fff;
+      border: 1px solid #e3eaf3;
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+    .stat-label { font-size: 13px; color: #6b7c93; }
+    .stat-value { font-size: 22px; line-height: 1; color: #1c5fd0; }
+    .stat-unit { font-size: 12px; color: #6b7c93; }
+
+    /* 筛选表单 */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #eef2f8;
+      margin-bottom: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; color: #6b7c93; }
+    .field input, .field select {
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid #d6dfeb;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #1f2d3d;
+      background: #fff;
+      outline: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: #2f8ce0;
+      box-shadow: 0 0 0 2px rgba(47, 140, 224, .15);
+    }
+    .field-keyword input { width: 220px; }
+    .filters .actions { display: flex; gap: 10px; margin-left: auto; }
+
+    .btn {
+      height: 34px;
+      padding: 0 18px;
+      border: 1px solid #d6dfeb;
+      border-radius: 6px;
+      background: #fff;
+      color: #42526e;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn:hover { border-color: #2f8ce0; color: #1c5fd0; }
+    .btn-primary { background: #1c5fd0; border-color: #1c5fd0; color: #fff; }
+    .btn-primary:hover { background: #2f8ce0; border-color: #2f8ce0; color: #fff; }
+
+    /* 就诊记录表格 */
+    .table-wrap { overflow-x: auto; }
+    .record-table { width: 100%; border-collapse: collapse; }
+    .record-table th, .record-table td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid #eef2f8;
+      white-space: nowrap;
+    }
+    .record-table th { background: #f7faff; color: #42526e; font-size: 13px; font-weight: 600; }
+    .record-table tbody tr:hover { background: #f7faff; }
+    .record-table .empty { text-align: center; color: #6b7c93; padding: 32px 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .badge-outpatient { color: #1c5fd0; background: #e8f1ff; border-color: #c7ddff; }
+    .badge-emergency { color: #d4380d; background: #fff2e8; border-color: #ffd8bf; }
+    .badge-inpatient { color: #087f5b; background: #e6f7f1; border-color: #b7e4d2; }
+
+    .status { font-size: 13px; }
+    .status-done { color: #087f5b; }
+    .status-doing { color: #d48806; }
+    .status-canceled { color: #8c8c8c; }
+
+    .btn-link { padding: 0; border: none; background: none; color: #1c5fd0; font-size: 14px; cursor: pointer; }
+    .btn-link:hover { text-decoration: underline; }
+
+    /* 分页 */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #6b7c93;
+    }
+    .page-list { display: flex; gap: 6px; }
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d6dfeb;
+      border-radius: 6px;
+      background: #fff;
+      color: #42526e;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .page-btn:hover:not(:disabled) { border-color: #2f8ce0; color: #1c5fd0; }
+    .page-btn.active { background: #1c5fd0; border-color: #1c5fd0; color: #fff; }
+    .page-btn:disabled { color: #c0c9d6; cursor: not-allowed; }
+
+    /* 就诊详情弹窗 */
+    .modal[hidden] { display: none; }
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-mask { position: absolute; inset: 0; background: rgba(15, 28, 48, .45); }
+    .modal-dialog {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: min(760px, 92vw);
+      max-height: 86vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(15, 28, 48, .25);
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #eef2f8;
+    }
+    .modal-head h3 { font-size: 16px; }
+    .modal-close { border: none; background: none; color: #8c9aab; font-size: 22px; line-height: 1; cursor: pointer; }
+    .modal-close:hover { color: #1f2d3d; }
+    .modal-body { padding: 18px 20px; overflow-y: auto; }
+    .modal-foot { padding: 12px 20px; border-top: 1px solid #eef2f8; text-align: right; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px 24px;
+      margin-bottom: 16px;
+    }
+    .detail-grid > div { display: flex; gap: 8px; }
+    .detail-grid dt { color: #6b7c93; min-width: 72px; }
+    .detail-grid dd { font-weight: 600; }
+    .detail-section { margin-bottom: 16px; }
+    .detail-section h4 {
+      margin-bottom: 8px;
+      padding-left: 8px;
+      border-left: 3px solid #1c5fd0;
+      font-size: 14px;
+    }
+    .detail-section p { line-height: 1.8; color: #42526e; }
+    .order-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .order-table th, .order-table td { padding: 8px 10px; border: 1px solid #eef2f8; text-align: left; }
+    .order-table th { background: #f7faff; color: #42526e; font-weight: 600; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .filters .actions { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">医院信息系统</div>
+    <nav class="topnav">
+      <a href="index.html">首页</a>
+      <span>门诊管理</span>
+      <span class="current">就诊记录</span>
+    </nav>
+    <div class="user">门诊医生站 · 李医生</div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <nav class="side-nav">
+        <a href="index.html">系统首页</a>
+        <a href="visit-records.html" class="active">就诊记录</a>
+        <span class="disabled">电子病历</span>
+        <span class="disabled">检验检查</span>
+        <span class="disabled">药房管理</span>
+        <span class="disabled">收费结算</span>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb">
+        <a href="index.html">首页</a>
+        <span>/</span>
+        <span>门诊管理</span>
+        <span>/</span>
+        <span class="current">就诊记录</span>
+      </nav>
+
+      <section class="panel patient-panel">
+        <div class="panel-head">
+          <h2>患者基本信息</h2>
+          <span class="allergy">过敏史：青霉素</span>
+        </div>
+        <dl class="patient-info">
+          <div><dt>姓名</dt><dd>张伟</dd></div>
+          <div><dt>性别</dt><dd>男</dd></div>
+          <div><dt>年龄</dt><dd>45 岁</dd></div>
+          <div><dt>病历号</dt><dd>MR2026000123</dd></div>
+          <div><dt>医保类型</dt><dd>城镇职工基本医疗保险</dd></div>
+          <div><dt>联系电话</dt><dd>138****6621</dd></div>
+        </dl>
+      </section>
+
+      <section class="summary">
+        <div class="stat-card">
+          <span class="stat-label">就诊总次数</span>
+          <strong class="stat-value">12</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">门诊就诊</span>
+          <strong class="stat-value">8</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">急诊就诊</span>
+          <strong class="stat-value">2</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">住院就诊</span>
+          <strong class="stat-value">2</strong>
+          <span class="stat-unit">次</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">最近就诊时间</span>
+          <strong class="stat-value">2026-03-18</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>就诊记录列表</h2>
+        </div>
+
+        <form class="filters" id="filterForm">
+          <div class="field">
+            <label for="filterType">就诊类型</label>
+            <select id="filterType">
+              <option value="">全部</option>
+              <option value="门诊">门诊</option>
+              <option value="急诊">急诊</option>
+              <option value="住院">住院</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterDept">就诊科室</label>
+            <select id="filterDept">
+              <option value="">全部科室</option>
+              <option value="心血管内科">心血管内科</option>
+              <option value="内分泌科">内分泌科</option>
+              <option value="呼吸内科">呼吸内科</option>
+              <option value="消化内科">消化内科</option>
+              <option value="神经内科">神经内科</option>
+              <option value="骨科">骨科</option>
+              <option value="急诊内科">急诊内科</option>
+              <option value="急诊外科">急诊外科</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterStart">开始日期</label>
+            <input type="date" id="filterStart" />
+          </div>
+          <div class="field">
+            <label for="filterEnd">结束日期</label>
+            <input type="date" id="filterEnd" />
+          </div>
+          <div class="field field-keyword">
+            <label for="filterKeyword">关键字</label>
+            <input type="text" id="filterKeyword" placeholder="就诊号 / 医生 / 诊断" />
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">查询</button>
+            <button type="reset" class="btn" id="resetBtn">重置</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table class="record-table">
+            <thead>
+              <tr>
+                <th>就诊号</th>
+                <th>就诊类型</th>
+                <th>就诊科室</th>
+                <th>接诊医生</th>
+                <th>就诊时间</th>
+                <th>主诊断</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="recordBody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span class="page-total" id="pageTotal">共 0 条记录</span>
+          <div class="page-list" id="pageList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="detailModal" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">就诊详情</h3>
+        <button type="button" class="modal-close" data-close="1" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-primary" data-close="1">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var PAGE_SIZE = 6;
+
+      var RECORDS = [
+        {
+          id: "MZ20260318012", type: "门诊", dept: "心血管内科", doctor: "王海涛",
+          time: "2026-03-18 09:35", diagnosis: "原发性高血压（2级）", status: "进行中",
+          chief: "反复头晕 3 个月，加重 1 周。",
+          history: "患者 3 个月前无明显诱因出现头晕，多于晨起时明显，休息后可缓解，未予系统诊治。1 周来头晕发作频繁，伴颈部僵硬感，无恶心呕吐、无肢体活动障碍。既往高血压病史 5 年，平素口服苯磺酸氨氯地平片 5mg 每日一次，血压控制欠佳。",
+          exam: "体温 36.5℃，脉搏 78 次/分，呼吸 18 次/分，血压 158/96 mmHg。神志清楚，双肺呼吸音清，心律齐，各瓣膜听诊区未闻及病理性杂音，腹软，双下肢无水肿。",
+          advice: "继续口服降压药物，低盐低脂饮食，每日监测血压并记录，两周后门诊复查，如有头痛、视物模糊及时就诊。",
+          orders: [
+            { name: "苯磺酸氨氯地平片", spec: "5mg×7片", usage: "口服 每次 1 片 每日 1 次", qty: "2 盒" },
+            { name: "阿托伐他汀钙片", spec: "20mg×7片", usage: "口服 每次 1 片 每晚 1 次", qty: "2 盒" }
+          ]
+        },
+        {
+          id: "MZ20260312001", type: "门诊", dept: "心血管内科", doctor: "王海涛",
+          time: "2026-03-12 09:20", diagnosis: "原发性高血压（2级）", status: "已完成",
+          chief: "高血压复诊，自诉血压波动于 140-150/90-95 mmHg。",
+          history: "患者规律服药，近 1 个月家庭自测血压偏高，无明显头痛、胸闷。饮食偏咸，睡眠一般。",
+          exam: "体温 36.4℃，脉搏 76 次/分，呼吸 18 次/分，血压 148/92 mmHg。心肺腹查体未见明显异常。",
+          advice: "调整降压方案，加强生活方式干预，1 个月后复查血脂、肝肾功能。",
+          orders: [
+            { name: "苯磺酸氨氯地平片", spec: "5mg×7片", usage: "口服 每次 1 片 每日 1 次", qty: "4 盒" },
+            { name: "血脂四项", spec: "检验", usage: "空腹抽血", qty: "1 次" }
+          ]
+        },
+        {
+          id: "MZ20260308015", type: "门诊", dept: "内分泌科", doctor: "李静",
+          time: "2026-03-08 14:05", diagnosis: "2型糖尿病", status: "已完成",
+          chief: "口干、多饮 2 个月。",
+          history: "患者 2 个月来无明显诱因出现口干多饮，每日饮水量约 2500ml，夜尿 2 次，体重下降约 3kg。否认多食易饥，无手足麻木。",
+          exam: "体温 36.6℃，脉搏 80 次/分，血压 132/84 mmHg。身高 172cm，体重 78kg。双足背动脉搏动可，双下肢无水肿。",
+          advice: "控制饮食，适量运动，每周监测空腹及餐后 2 小时血糖，3 个月后复查糖化血红蛋白。",
+          orders: [
+            { name: "二甲双胍缓释片", spec: "0.5g×30片", usage: "口服 每次 1 片 每日 2 次 餐后", qty: "1 盒" },
+            { name: "糖化血红蛋白", spec: "检验", usage: "空腹抽血", qty: "1 次" }
+          ]
+        },
+        {
+          id: "JZ20260305102", type: "急诊", dept: "急诊内科", doctor: "陈志远",
+          time: "2026-03-05 22:40", diagnosis: "急性胃肠炎", status: "已完成",
+          chief: "腹痛、腹泻伴呕吐 6 小时。",
+          history: "患者 6 小时前聚餐后出现中上腹阵发性绞痛，伴腹泻 5 次，为黄色稀水样便，无脓血，伴恶心呕吐 2 次。无发热、无里急后重。",
+          exam: "体温 37.8℃，脉搏 92 次/分，血压 116/72 mmHg。中上腹轻压痛，无反跳痛，肠鸣音活跃。",
+          advice: "补液对症治疗，清淡饮食，如出现持续高热、血便或剧烈腹痛及时复诊。",
+          orders: [
+            { name: "蒙脱石散", spec: "3g×10袋", usage: "口服 每次 1 袋 每日 3 次", qty: "1 盒" },
+            { name: "口服补液盐Ⅲ", spec: "5.125g×6袋", usage: "温水冲服 每次 1 袋", qty: "2 盒" }
+          ]
+        },
+        {
+          id: "ZY20260228007", type: "住院", dept: "呼吸内科", doctor: "赵敏",
+          time: "2026-02-28 10:15", diagnosis: "社区获得性肺炎", status: "已完成",
+          chief: "发热、咳嗽、咳痰 5 天。",
+          history: "患者 5 天前受凉后出现发热，最高体温 38.9℃，伴咳嗽、咳黄色黏痰，无咯血、无胸痛。院外口服抗生素效果欠佳。",
+          exam: "体温 38.2℃，脉搏 96 次/分，呼吸 22 次/分，血压 124/78 mmHg。右下肺可闻及湿性啰音。",
+          advice: "住院抗感染治疗，卧床休息，加强营养，复查胸部 CT 及血常规。",
+          orders: [
+            { name: "注射用头孢曲松钠", spec: "1.0g", usage: "静脉滴注 每日 1 次", qty: "7 天" },
+            { name: "氨溴索注射液", spec: "15mg", usage: "静脉滴注 每日 2 次", qty: "7 天" }
+          ]
+        },
+        {
+          id: "MZ20260220033", type: "门诊", dept: "消化内科", doctor: "刘鹏",
+          time: "2026-02-20 08:50", diagnosis: "慢性胃炎", status: "已完成",
+          chief: "上腹隐痛、餐后饱胀 1 个月。",
+          history: "患者 1 个月来进食后出现上腹隐痛及饱胀感，偶有反酸嗳气，无呕血黑便，食欲尚可。",
+          exam: "体温 36.5℃，脉搏 74 次/分，血压 126/80 mmHg。剑突下轻压痛，无反跳痛，肝脾肋下未触及。",
+          advice: "规律饮食，忌辛辣刺激及烟酒，必要时行胃镜检查。",
+          orders: [
+            { name: "雷贝拉唑钠肠溶片", spec: "10mg×7片", usage: "口服 每次 1 片 每日 1 次 早餐前", qty: "2 盒" },
+            { name: "枸橼酸莫沙必利片", spec: "5mg×24片", usage: "口服 每次 1 片 每日 3 次 餐前", qty: "1 盒" }
+          ]
+        },
+        {
+          id: "MZ20260214021", type: "门诊", dept: "心血管内科", doctor: "王海涛",
+          time: "2026-02-14 15:30", diagnosis: "原发性高血压（2级）", status: "已完成",
+          chief: "高血压随访，无明显不适。",
+          history: "患者坚持服药，血压控制尚可，偶有晨起头晕，无胸闷心悸。",
+          exam: "体温 36.3℃，脉搏 72 次/分，血压 136/86 mmHg。心肺听诊未见异常。",
+          advice: "维持原方案，继续监测血压，3 个月后复查。",
+          orders: [
+            { name: "苯磺酸氨氯地平片", spec: "5mg×7片", usage: "口服 每次 1 片 每日 1 次", qty: "4 盒" }
+          ]
+        },
+        {
+          id: "MZ20260206009", type: "门诊", dept: "神经内科", doctor: "孙倩",
+          time: "2026-02-06 11:10", diagnosis: "偏头痛", status: "已完成",
+          chief: "反复右侧搏动性头痛 2 年，再发 2 天。",
+          history: "患者 2 年来反复出现右侧颞部搏动性头痛，发作前偶有视物模糊，伴畏光畏声，每次持续 4-6 小时，休息后缓解。2 天前劳累后再发。",
+          exam: "体温 36.4℃，脉搏 70 次/分，血压 118/76 mmHg。神志清楚，颈软，病理征阴性。",
+          advice: "避免劳累、熬夜及情绪波动，记录头痛日记，发作时尽早服药。",
+          orders: [
+            { name: "布洛芬缓释胶囊", spec: "0.3g×20粒", usage: "口服 每次 1 粒 每日 2 次", qty: "1 盒" },
+            { name: "氟桂利嗪胶囊", spec: "5mg×20粒", usage: "口服 每次 1 粒 每晚 1 次", qty: "1 盒" }
+          ]
+        },
+        {
+          id: "ZY20260125003", type: "住院", dept: "内分泌科", doctor: "李静",
+          time: "2026-01-25 09:00", diagnosis: "2型糖尿病伴周围神经病变", status: "已完成",
+          chief: "双足麻木、针刺感半年。",
+          history: "患者糖尿病病史 8 年，半年来出现双足对称性麻木及针刺样疼痛，夜间为著。近期空腹血糖波动于 8-10 mmol/L。",
+          exam: "体温 36.5℃，脉搏 78 次/分，血压 138/86 mmHg。双足痛温觉减退，10g 尼龙丝试验阳性，足背动脉搏动可。",
+          advice: "住院调整降糖方案并营养神经治疗，加强足部护理，避免烫伤及外伤。",
+          orders: [
+            { name: "甲钴胺片", spec: "0.5mg×20片", usage: "口服 每次 1 片 每日 3 次", qty: "3 盒" },
+            { name: "门冬胰岛素30注射液", spec: "300U/支", usage: "皮下注射 早 12U 晚 10U", qty: "2 支" }
+          ]
+        },
+        {
+          id: "MZ20260118026", type: "门诊", dept: "骨科", doctor: "周建国",
+          time: "2026-01-18 16:20", diagnosis: "腰椎间盘突出症", status: "已完成",
+          chief: "腰痛伴右下肢放射痛 1 个月。",
+          history: "患者 1 个月前搬重物后出现腰部疼痛，伴右下肢后外侧放射痛至小腿，咳嗽及弯腰时加重，休息后减轻。",
+          exam: "腰 4-5 棘突旁压痛，右侧直腿抬高试验 50°阳性，右足背外侧感觉减退，肌力正常。",
+          advice: "卧硬板床休息，避免弯腰负重，配合腰背肌功能锻炼，必要时复查腰椎 MRI。",
+          orders: [
+            { name: "塞来昔布胶囊", spec: "0.2g×6粒", usage: "口服 每次 1 粒 每日 1 次", qty: "2 盒" },
+            { name: "甲钴胺片", spec: "0.5mg×20片", usage: "口服 每次 1 片 每日 3 次", qty: "1 盒" }
+          ]
+        },
+        {
+          id: "JZ20260112011", type: "急诊", dept: "急诊外科", doctor: "陈志远",
+          time: "2026-01-12 19:05", diagnosis: "急性阑尾炎", status: "已完成",
+          chief: "转移性右下腹痛 10 小时。",
+          history: "患者 10 小时前出现上腹隐痛，6 小时后疼痛转移并固定于右下腹，呈持续性胀痛，伴恶心、低热，无腹泻。",
+          exam: "体温 37.9℃，脉搏 90 次/分，血压 122/76 mmHg。麦氏点压痛、反跳痛阳性，腹肌紧张，肠鸣音减弱。",
+          advice: "急诊收入院行腹腔镜阑尾切除术，术前禁食禁水，术后抗感染治疗。",
+          orders: [
+            { name: "注射用头孢呋辛钠", spec: "1.5g", usage: "静脉滴注 每日 2 次", qty: "3 天" },
+            { name: "腹部立位平片", spec: "检查", usage: "急诊", qty: "1 次" }
+          ]
+        },
+        {
+          id: "MZ20260105004", type: "门诊", dept: "呼吸内科", doctor: "赵敏",
+          time: "2026-01-05 10:40", diagnosis: "急性上呼吸道感染", status: "已完成",
+          chief: "咽痛、鼻塞伴低热 2 天。",
+          history: "患者 2 天前受凉后出现咽痛、鼻塞、流清涕，伴畏寒，自测体温 37.6℃，无咳嗽咳痰，无胸闷气促。",
+          exam: "体温 37.5℃，脉搏 82 次/分，血压 120/76 mmHg。咽部充血，双侧扁桃体无肿大，双肺呼吸音清。",
+          advice: "多饮水、注意休息，清淡饮食，如持续发热超过 3 天或出现咳嗽气促及时复诊。",
+          orders: [
+            { name: "连花清瘟胶囊", spec: "0.35g×24粒", usage: "口服 每次 4 粒 每日 3 次", qty: "1 盒" }
+          ]
+        }
+      ];
+
+      var TYPE_CLASS = { "门诊": "badge-outpatient", "急诊": "badge-emergency", "住院": "badge-inpatient" };
+      var STATUS_CLASS = { "已完成": "status-done", "进行中": "status-doing", "已取消": "status-canceled" };
+
+      var state = { page: 1, type: "", dept: "", start: "", end: "", keyword: "" };
+
+      var els = {
+        body: document.getElementById("recordBody"),
+        pageList: document.getElementById("pageList"),
+        pageTotal: document.getElementById("pageTotal"),
+        form: document.getElementById("filterForm"),
+        type: document.getElementById("filterType"),
+        dept: document.getElementById("filterDept"),
+        start: document.getElementById("filterStart"),
+        end: document.getElementById("filterEnd"),
+        keyword: document.getElementById("filterKeyword"),
+        modal: document.getElementById("detailModal"),
+        modalTitle: document.getElementById("modalTitle"),
+        modalBody: document.getElementById("modalBody")
+      };
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (ch) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+        });
+      }
+
+      function filterRecords() {
+        return RECORDS.filter(function (item) {
+          if (state.type && item.type !== state.type) return false;
+          if (state.dept && item.dept !== state.dept) return false;
+          if (state.start && item.time.slice(0, 10) < state.start) return false;
+          if (state.end && item.time.slice(0, 10) > state.end) return false;
+          if (state.keyword) {
+            var text = (item.id + item.dept + item.doctor + item.diagnosis).toLowerCase();
+            if (text.indexOf(state.keyword.toLowerCase()) === -1) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderPagination(totalPages) {
+        var html = '<button type="button" class="page-btn" data-page="' + (state.page - 1) + '"' +
+          (state.page === 1 ? " disabled" : "") + ">上一页</button>";
+        for (var i = 1; i <= totalPages; i += 1) {
+          html += '<button type="button" class="page-btn' + (i === state.page ? " active" : "") +
+            '" data-page="' + i + '">' + i + "</button>";
+        }
+        html += '<button type="button" class="page-btn" data-page="' + (state.page + 1) + '"' +
+          (state.page === totalPages ? " disabled" : "") + ">下一页</button>";
+        els.pageList.innerHTML = html;
+      }
+
+      function renderTable(list) {
+        var totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        if (state.page > totalPages) state.page = totalPages;
+
+        var rows = list.slice((state.page - 1) * PAGE_SIZE, state.page * PAGE_SIZE);
+
+        if (!rows.length) {
+          els.body.innerHTML = '<tr><td class="empty" colspan="8">没有符合条件的就诊记录</td></tr>';
+        } else {
+          els.body.innerHTML = rows.map(function (item) {
+            return "<tr>" +
+              "<td>" + escapeHtml(item.id) + "</td>" +
+              '<td><span class="badge ' + TYPE_CLASS[item.type] + '">' + escapeHtml(item.type) + "</span></td>" +
+              "<td>" + escapeHtml(item.dept) + "</td>" +
+              "<td>" + escapeHtml(item.doctor) + "</td>" +
+              "<td>" + escapeHtml(item.time) + "</td>" +
+              "<td>" + escapeHtml(item.diagnosis) + "</td>" +
+              '<td><span class="status ' + STATUS_CLASS[item.status] + '">' + escapeHtml(item.status) + "</span></td>" +
+              '<td><button type="button" class="btn-link" data-id="' + escapeHtml(item.id) + '">查看详情</button></td>' +
+              "</tr>";
+          }).join("");
+        }
+
+        els.pageTotal.textContent = "共 " + list.length + " 条记录";
+        renderPagination(totalPages);
+      }
+
+      function renderDetail(item) {
+        var orders = item.orders.map(function (order) {
+          return "<tr><td>" + escapeHtml(order.name) + "</td><td>" + escapeHtml(order.spec) +
+            "</td><td>" + escapeHtml(order.usage) + "</td><td>" + escapeHtml(order.qty) + "</td></tr>";
+        }).join("");
+
+        els.modalTitle.textContent = "就诊详情 · " + item.id;
+        els.modalBody.innerHTML =
+          '<dl class="detail-grid">' +
+          "<div><dt>就诊号</dt><dd>" + escapeHtml(item.id) + "</dd></div>" +
+          "<div><dt>就诊类型</dt><dd>" + escapeHtml(item.type) + "</dd></div>" +
+          "<div><dt>就诊科室</dt><dd>" + escapeHtml(item.dept) + "</dd></div>" +
+          "<div><dt>接诊医生</dt><dd>" + escapeHtml(item.doctor) + "</dd></div>" +
+          "<div><dt>就诊时间</dt><dd>" + escapeHtml(item.time) + "</dd></div>" +
+          "<div><dt>就诊状态</dt><dd>" + escapeHtml(item.status) + "</dd></div>" +
+          "<div><dt>主诊断</dt><dd>" + escapeHtml(item.diagnosis) + "</dd></div>" +
+          "</dl>" +
+          '<div class="detail-section"><h4>主诉</h4><p>' + escapeHtml(item.chief) + "</p></div>" +
+          '<div class="detail-section"><h4>现病史</h4><p>' + escapeHtml(item.history) + "</p></div>" +
+          '<div class="detail-section"><h4>体格检查</h4><p>' + escapeHtml(item.exam) + "</p></div>" +
+          '<div class="detail-section"><h4>医嘱</h4><p>' + escapeHtml(item.advice) + "</p></div>" +
+          '<div class="detail-section"><h4>处方明细</h4>' +
+          '<table class="order-table"><thead><tr><th>药品名称</th><th>规格</th><th>用法用量</th><th>数量</th></tr></thead>' +
+          "<tbody>" + (orders || '<tr><td colspan="4">无</td></tr>') + "</tbody></table></div>";
+      }
+
+      function openModal(id) {
+        var item = RECORDS.filter(function (record) { return record.id === id; })[0];
+        if (!item) return;
+        renderDetail(item);
+        els.modal.hidden = false;
+      }
+
+      function closeModal() {
+        els.modal.hidden = true;
+      }
+
+      els.form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        state.type = els.type.value;
+        state.dept = els.dept.value;
+        state.start = els.start.value;
+        state.end = els.end.value;
+        state.keyword = els.keyword.value.trim();
+        state.page = 1;
+        renderTable(filterRecords());
+      });
+
+      els.form.addEventListener("reset", function () {
+        window.setTimeout(function () {
+          state = { page: 1, type: "", dept: "", start: "", end: "", keyword: "" };
+          renderTable(filterRecords());
+        }, 0);
+      });
+
+      els.pageList.addEventListener("click", function (event) {
+        var btn = event.target.closest(".page-btn");
+        if (!btn || btn.disabled) return;
+        var page = Number(btn.dataset.page);
+        if (!page || page === state.page) return;
+        state.page = page;
+        renderTable(filterRecords());
+      });
+
+      els.body.addEventListener("click", function (event) {
+        var btn = event.target.closest(".btn-link");
+        if (btn) openModal(btn.dataset.id);
+      });
+
+      els.modal.addEventListener("click", function (event) {
+        if (event.target.dataset.close) closeModal();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !els.modal.hidden) closeModal();
+      });
+
+      renderTable(filterRecords());
+    }());
+  </script>
+</body>
+</html>
