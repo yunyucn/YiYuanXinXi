@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>医院信息系统</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1f2d3d;
+      min-height: 100vh;
+    }
+    .topbar {
+      height: 60px;
+      background: linear-gradient(90deg, #1c5fd0, #2f8ce0);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+    h1 { font-size: 20px; margin-bottom: 6px; }
+    .subtitle { color: #6b7c93; font-size: 14px; margin-bottom: 24px; }
+    .modules {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .module {
+      display: block;
+      background: #fff;
+      border: 1px solid #e3eaf3;
+      border-radius: 10px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .module:hover { box-shadow: 0 8px 20px rgba(31, 45, 61, .1); transform: translateY(-2px); }
+    .module h2 { font-size: 16px; margin-bottom: 8px; }
+    .module p { font-size: 13px; color: #6b7c93; line-height: 1.6; }
+    .module.disabled { opacity: .55; cursor: not-allowed; }
+    .module.disabled:hover { box-shadow: none; transform: none; }
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 400;
+      padding: 1px 8px;
+      border-radius: 10px;
+      background: #e8f1ff;
+      color: #1c5fd0;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">医院信息系统</div>
+  <main>
+    <h1>功能模块</h1>
+    <p class="subtitle">请选择需要进入的业务模块</p>
+    <div class="modules">
+      <a class="module" href="visit-records.html">
+        <h2>就诊记录<span class="tag">已上线</span></h2>
+        <p>查询患者历次门诊、急诊与住院就诊信息，查看诊断与医嘱明细。</p>
+      </a>
+      <div class="module disabled">
+        <h2>门诊挂号<span class="tag">建设中</span></h2>
+        <p>门诊号源管理与现场、预约挂号。</p>
+      </div>
+      <div class="module disabled">
+        <h2>电子病历<span class="tag">建设中</span></h2>
+        <p>门诊病历与住院病程记录书写。</p>
+      </div>
+      <div class="module disabled">
+        <h2>检验检查<span class="tag">建设中</span></h2>
+        <p>检验检查申请、报告查询与结果回传。</p>
+      </div>
+      <div class="module disabled">
+        <h2>药房管理<span class="tag">建设中</span></h2>
+        <p>药品库存、处方审核与发药管理。</p>
+      </div>
+      <div class="module disabled">
+        <h2>收费结算<span class="tag">建设中</span></h2>
+        <p>门诊收费、住院预交金与医保结算。</p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
