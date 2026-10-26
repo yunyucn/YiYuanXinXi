@@ -197,7 +197,8 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
 
     <div v-loading="loading">
       <div class="stat-grid report-cards">
-        <div v-for="card in cards" :key="card.label" class="stat-card">
+        <div v-for="(card, index) in cards" :key="card.label" class="stat-card">
+          <DecorPattern variant="cells" :tone="['blue', 'teal', 'amber', 'violet'][index % 4]" class="stat-decor" />
           <div class="label">{{ card.label }}</div>
           <div class="value">{{ card.value }}<small>{{ card.unit }}</small></div>
           <div class="hint">{{ card.hint }}</div>
@@ -240,6 +241,16 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
     </div>
   </div>
 </template>
+
+<style scoped>
+.stat-decor {
+  right: 0;
+  left: auto;
+  width: 60%;
+  opacity: 0.42;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 58%, #000 100%);
+}
+</style>
 
 <style scoped>
 .report-cards .value small {

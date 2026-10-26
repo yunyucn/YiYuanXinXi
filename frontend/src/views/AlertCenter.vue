@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Bell, Refresh, Search, Timer, Warning } from '@element-plus/icons-vue'
+import { Bell, Check, Refresh, Search, Timer, Warning } from '@element-plus/icons-vue'
 import { alertApi } from '@/api'
 import { useAppStore } from '@/store/app'
 import { formatDateTime } from '@/utils/format'
@@ -125,7 +125,7 @@ function openRelated(row) {
 }
 
 function alertActions(row) {
-  if (!row.is_handled) return [{ label: '处理', onClick: () => openHandle(row) }]
+  if (!row.is_handled) return [{ label: '处理', icon: Check, emphasis: true, onClick: () => openHandle(row) }]
   return [
     {
       label: '详情',
@@ -149,19 +149,23 @@ onMounted(loadAll)
     </PageHeader>
 
     <div class="scan-overview">
-      <div class="page-card scan-item">
+      <div class="page-card scan-item tone-blue">
+        <DecorPattern variant="cross" tone="blue" class="scan-decor" />
         <span class="scan-icon"><el-icon :size="20"><Timer /></el-icon></span>
         <div><span>上次扫描</span><strong>{{ formatDateTime(scanInfo.last_scan) }}</strong></div>
       </div>
-      <div class="page-card scan-item">
+      <div class="page-card scan-item tone-teal">
+        <DecorPattern variant="pulse" tone="teal" class="scan-decor" />
         <span class="scan-icon"><el-icon :size="20"><Timer /></el-icon></span>
         <div><span>下次扫描</span><strong>{{ formatDateTime(scanInfo.next_scan) }}</strong></div>
       </div>
-      <div class="page-card scan-item">
+      <div class="page-card scan-item tone-amber">
+        <DecorPattern variant="cells" tone="amber" class="scan-decor" />
         <span class="scan-icon warning"><el-icon :size="20"><Bell /></el-icon></span>
         <div><span>铃铛红点</span><strong>{{ appStore.alertCount }} 条</strong></div>
       </div>
-      <div class="page-card scan-item">
+      <div class="page-card scan-item tone-rose">
+        <DecorPattern variant="pulse" tone="rose" class="scan-decor" />
         <span class="scan-icon danger"><el-icon :size="20"><Warning /></el-icon></span>
         <div><span>当前页未处理</span><strong>{{ unhandledCount }} 条</strong></div>
       </div>
@@ -265,6 +269,36 @@ onMounted(loadAll)
   gap: 12px;
   align-items: center;
   padding: 14px 16px;
+  overflow: hidden;
+}
+
+.scan-item > *:not(.scan-decor) {
+  position: relative;
+  z-index: 1;
+}
+
+.scan-decor {
+  right: 0;
+  left: auto;
+  width: 58%;
+  opacity: 0.36;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 55%, #000 100%);
+}
+
+.scan-item.tone-blue {
+  background: radial-gradient(110% 100% at 100% 0%, rgba(56, 189, 248, 0.15), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+}
+
+.scan-item.tone-teal {
+  background: radial-gradient(110% 100% at 100% 0%, rgba(13, 148, 136, 0.13), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+}
+
+.scan-item.tone-amber {
+  background: radial-gradient(110% 100% at 100% 0%, rgba(217, 119, 6, 0.13), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+}
+
+.scan-item.tone-rose {
+  background: radial-gradient(110% 100% at 100% 0%, rgba(220, 38, 38, 0.12), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
 }
 
 .scan-icon {

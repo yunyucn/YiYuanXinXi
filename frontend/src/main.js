@@ -7,6 +7,7 @@ import BloodBadge from '@/components/blood/BloodBadge.vue'
 import CompatBanner from '@/components/blood/CompatBanner.vue'
 import ExpiryBar from '@/components/blood/ExpiryBar.vue'
 import RhTag from '@/components/blood/RhTag.vue'
+import DecorPattern from '@/components/common/DecorPattern.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RouteLoading from '@/components/common/RouteLoading.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
@@ -30,6 +31,7 @@ app.component('BloodBadge', BloodBadge)
 app.component('RhTag', RhTag)
 app.component('ExpiryBar', ExpiryBar)
 app.component('CompatBanner', CompatBanner)
+app.component('DecorPattern', DecorPattern)
 app.component('PageHeader', PageHeader)
 app.component('RouteLoading', RouteLoading)
 app.component('StatusTag', StatusTag)

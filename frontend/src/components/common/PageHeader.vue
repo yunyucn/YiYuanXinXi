@@ -7,6 +7,7 @@ defineProps({
 
 <template>
   <div class="page-header">
+    <DecorPattern variant="pulse" tone="blue" class="page-header-decor" />
     <div>
       <h1>{{ title }}</h1>
       <p v-if="description">{{ description }}</p>
@@ -19,11 +20,28 @@ defineProps({
 
 <style scoped>
 .page-header {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   min-height: 48px;
+  padding: 2px 4px 2px 0;
   margin-bottom: 18px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.page-header > div {
+  position: relative;
+  z-index: 1;
+}
+
+.page-header-decor {
+  right: 0;
+  left: auto;
+  width: 46%;
+  opacity: 0.38;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
 }
 
 h1 {

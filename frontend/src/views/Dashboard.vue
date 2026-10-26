@@ -178,6 +178,7 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
 
     <div class="stat-grid">
       <div v-for="card in cards" :key="card.key" class="stat-card" :class="card.tone">
+        <DecorPattern variant="cells" :tone="card.tone === 'red' ? 'rose' : card.tone" class="stat-decor" />
         <div class="label">
           <span class="stat-icon"><el-icon :size="18"><component :is="card.icon" /></el-icon></span>
           {{ card.label }}
@@ -236,6 +237,19 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
 .stat-card {
   position: relative;
   overflow: hidden;
+}
+
+.stat-card > *:not(.stat-decor) {
+  position: relative;
+  z-index: 1;
+}
+
+.stat-decor {
+  right: 0;
+  left: auto;
+  width: 62%;
+  opacity: 0.44;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 58%, #000 100%);
 }
 
 .stat-card::after {
