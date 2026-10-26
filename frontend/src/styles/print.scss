@@ -1,0 +1,35 @@
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  body {
+    overflow: visible;
+    color: #000;
+    background: #fff;
+  }
+
+  .no-print,
+  .el-button,
+  .el-message,
+  .el-message-box,
+  .el-overlay {
+    display: none !important;
+  }
+
+  .print-shell {
+    min-height: auto;
+    padding: 0;
+    background: #fff;
+  }
+
+  .print-paper {
+    width: 100%;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+}
