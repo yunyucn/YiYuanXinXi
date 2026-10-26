@@ -219,10 +219,6 @@ onBeforeUnmount(() => {
             </el-menu-item>
           </template>
         </el-menu>
-        <div v-if="!appStore.collapsed" class="sidebar-foot">
-          <span>临床输血技术规范</span>
-          <small>v1.0 · 单机演示版</small>
-        </div>
       </aside>
 
       <main class="main-content">
@@ -466,19 +462,6 @@ onBeforeUnmount(() => {
   --el-menu-active-color: var(--bb-primary);
   --el-menu-item-height: 48px;
   --el-menu-sub-item-height: 44px;
-}
-
-.sidebar-foot {
-  padding: 14px 18px;
-  color: var(--bb-text-secondary);
-  border-top: 1px solid var(--bb-border);
-}
-
-.sidebar-foot span,
-.sidebar-foot small {
-  display: block;
-  font-size: 10px;
-  line-height: 1.6;
 }
 
 .main-content {

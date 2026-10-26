@@ -99,7 +99,7 @@ function useAccount(username) {
       <div class="panel-head">
         <span class="eyebrow">临床输血技术规范</span>
         <h2>登录工作台</h2>
-        <p>请选择演示账号或输入凭证</p>
+        <p>请选择角色账号或输入凭证</p>
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" :class="{ shake: shaking }" @submit.prevent="submit">
@@ -109,7 +109,7 @@ function useAccount(username) {
           </el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" size="large" type="password" show-password placeholder="演示密码 123456" autocomplete="current-password" @keyup.enter="submit">
+          <el-input v-model="form.password" size="large" type="password" show-password placeholder="密码 123456" autocomplete="current-password" @keyup.enter="submit">
             <template #prefix><el-icon><Lock /></el-icon></template>
           </el-input>
         </el-form-item>
@@ -124,10 +124,8 @@ function useAccount(username) {
           <span>{{ item.username }}</span>
         </button>
       </div>
-      <p class="demo-tip">演示账号密码统一为 <code>123456</code>，仅用于课程演示环境。</p>
+      <p class="demo-tip">测试账号密码统一为 <code>123456</code>。</p>
     </section>
-
-    <footer class="login-foot">输血管理分系统 · 单机演示版 · 推荐分辨率 1440 × 900</footer>
   </div>
 </template>
 
@@ -405,13 +403,4 @@ function useAccount(username) {
   color: #2563eb;
 }
 
-.login-foot {
-  position: absolute;
-  bottom: 22px;
-  left: 0;
-  width: 100%;
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 10px;
-  text-align: center;
-}
 </style>

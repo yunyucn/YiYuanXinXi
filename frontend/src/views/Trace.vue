@@ -136,12 +136,12 @@ onMounted(loadTrace)
 
       <section v-else-if="searched && result" class="page-card empty-state">
         <el-empty :image-size="110" description="未找到该住院号的输血记录">
-          <el-button type="primary" @click="useDemo('ZY20240512005')">查看演示追溯链路</el-button>
+        <el-button type="primary" @click="useDemo('ZY20240512005')">查看示例追溯链路</el-button>
         </el-empty>
       </section>
 
       <section v-else class="page-card empty-state">
-        <el-empty :image-size="110" description="输入住院号开始追溯，或点击右上角演示住院号" />
+      <el-empty :image-size="110" description="输入住院号开始追溯，或点击右上角示例住院号" />
       </section>
     </div>
   </div>
