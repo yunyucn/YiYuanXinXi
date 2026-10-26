@@ -1,0 +1,105 @@
+import { fileURLToPath, URL } from 'node:url'
+
+import vue from '@vitejs/plugin-vue'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { defineConfig } from 'vite'
+
+const elementPlusDeps = [
+  'element-plus/es',
+  'element-plus/es/components/base/style/index',
+  'element-plus/es/components/button/style/index',
+  'element-plus/es/components/checkbox/style/index',
+  'element-plus/es/components/checkbox-group/style/index',
+  'element-plus/es/components/col/style/index',
+  'element-plus/es/components/config-provider/style/index',
+  'element-plus/es/components/date-picker/style/index',
+  'element-plus/es/components/dialog/style/index',
+  'element-plus/es/components/drawer/style/index',
+  'element-plus/es/components/dropdown/style/index',
+  'element-plus/es/components/dropdown-item/style/index',
+  'element-plus/es/components/dropdown-menu/style/index',
+  'element-plus/es/components/empty/style/index',
+  'element-plus/es/components/form/style/index',
+  'element-plus/es/components/form-item/style/index',
+  'element-plus/es/components/icon/style/index',
+  'element-plus/es/components/input/style/index',
+  'element-plus/es/components/input-number/style/index',
+  'element-plus/es/components/loading/style/index',
+  'element-plus/es/components/menu/style/index',
+  'element-plus/es/components/menu-item/style/index',
+  'element-plus/es/components/message/style/index',
+  'element-plus/es/components/message-box/style/index',
+  'element-plus/es/components/option/style/index',
+  'element-plus/es/components/pagination/style/index',
+  'element-plus/es/components/popover/style/index',
+  'element-plus/es/components/progress/style/index',
+  'element-plus/es/components/radio-button/style/index',
+  'element-plus/es/components/radio-group/style/index',
+  'element-plus/es/components/row/style/index',
+  'element-plus/es/components/scrollbar/style/index',
+  'element-plus/es/components/select/style/index',
+  'element-plus/es/components/sub-menu/style/index',
+  'element-plus/es/components/switch/style/index',
+  'element-plus/es/components/tab-pane/style/index',
+  'element-plus/es/components/table/style/index',
+  'element-plus/es/components/table-column/style/index',
+  'element-plus/es/components/tabs/style/index',
+  'element-plus/es/components/tag/style/index',
+  'element-plus/es/components/timeline/style/index',
+  'element-plus/es/components/timeline-item/style/index',
+  'element-plus/es/components/tooltip/style/index',
+]
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    AutoImport({
+      imports: ['vue', 'vue-router', 'pinia'],
+      resolvers: [ElementPlusResolver({ importStyle: 'sass' })],
+      dts: false,
+    }),
+    Components({
+      resolvers: [ElementPlusResolver({ importStyle: 'sass' })],
+      dts: false,
+    }),
+  ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+  optimizeDeps: {
+    entries: ['index.html', 'src/**/*.{vue,js}'],
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      'axios',
+      'echarts',
+      'qrcode',
+      '@element-plus/icons-vue',
+      ...elementPlusDeps,
+    ],
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: '@use "@/styles/element-theme.scss" as *;',
+      },
+    },
+  },
+  server: {
+    port: 5173,
+    warmup: {
+      clientFiles: ['./src/**/*.vue', './src/**/*.js'],
+    },
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
+    },
+  },
+})
