@@ -1,0 +1,139 @@
+button,
+a,
+.el-button,
+.el-menu-item,
+.el-table__row,
+.clickable {
+  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+.el-button:not(.is-disabled):active {
+  transform: scale(0.97);
+}
+
+.el-button.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+.el-menu-item {
+  position: relative;
+}
+
+.el-menu-item::before {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+  width: 3px;
+  content: "";
+  background: var(--bb-primary);
+  border-radius: 0 2px 2px 0;
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 150ms ease-out;
+}
+
+.el-menu-item:hover::before,
+.el-menu-item.is-active::before {
+  transform: scaleY(1);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  color: var(--bb-primary);
+}
+
+.focusable:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+@keyframes pulse-red {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.pulse-red {
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes shake-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.shake {
+  animation: shake-x 300ms ease-out 1;
+}
+
+@keyframes bell-swing {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(12deg);
+  }
+  50% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes bell-bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.bell-swing {
+  animation: bell-swing 400ms ease-out 1;
+}
+
+.bell-bounce {
+  animation: bell-bounce 200ms ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
