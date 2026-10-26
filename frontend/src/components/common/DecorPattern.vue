@@ -82,7 +82,7 @@ const gradientId = `decor-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   width: 100%;
   height: 100%;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.38;
 }
 
 .decor-line,
@@ -116,7 +116,7 @@ const gradientId = `decor-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
 
 .is-cells,
 .is-cross {
-  opacity: 0.42;
+  opacity: 0.32;
 }
 
 .is-cross rect,

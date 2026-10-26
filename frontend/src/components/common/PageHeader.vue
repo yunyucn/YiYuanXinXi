@@ -39,8 +39,8 @@ defineProps({
 .page-header-decor {
   right: 0;
   left: auto;
-  width: 46%;
-  opacity: 0.38;
+  width: 34%;
+  opacity: 0.14;
   mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
 }
 

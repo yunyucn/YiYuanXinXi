@@ -246,8 +246,8 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
 .stat-decor {
   right: 0;
   left: auto;
-  width: 60%;
-  opacity: 0.42;
+  width: 50%;
+  opacity: 0.26;
   mask-image: linear-gradient(90deg, transparent 0%, #000 58%, #000 100%);
 }
 </style>

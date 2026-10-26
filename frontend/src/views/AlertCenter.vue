@@ -280,25 +280,25 @@ onMounted(loadAll)
 .scan-decor {
   right: 0;
   left: auto;
-  width: 58%;
-  opacity: 0.36;
+  width: 44%;
+  opacity: 0.14;
   mask-image: linear-gradient(90deg, transparent 0%, #000 55%, #000 100%);
 }
 
 .scan-item.tone-blue {
-  background: radial-gradient(110% 100% at 100% 0%, rgba(56, 189, 248, 0.15), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+  background: radial-gradient(110% 100% at 100% 0%, rgba(56, 189, 248, 0.03), transparent 60%), linear-gradient(180deg, #ffffff, var(--bb-card) 80%);
 }
 
 .scan-item.tone-teal {
-  background: radial-gradient(110% 100% at 100% 0%, rgba(13, 148, 136, 0.13), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+  background: radial-gradient(110% 100% at 100% 0%, rgba(13, 148, 136, 0.028), transparent 60%), linear-gradient(180deg, #ffffff, var(--bb-card) 80%);
 }
 
 .scan-item.tone-amber {
-  background: radial-gradient(110% 100% at 100% 0%, rgba(217, 119, 6, 0.13), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+  background: radial-gradient(110% 100% at 100% 0%, rgba(217, 119, 6, 0.03), transparent 60%), linear-gradient(180deg, #ffffff, var(--bb-card) 80%);
 }
 
 .scan-item.tone-rose {
-  background: radial-gradient(110% 100% at 100% 0%, rgba(220, 38, 38, 0.12), transparent 60%), linear-gradient(180deg, var(--bb-panel-tint), var(--bb-card) 80%);
+  background: radial-gradient(110% 100% at 100% 0%, rgba(220, 38, 38, 0.028), transparent 60%), linear-gradient(180deg, #ffffff, var(--bb-card) 80%);
 }
 
 .scan-icon {
