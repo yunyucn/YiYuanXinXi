@@ -140,7 +140,7 @@ function resetRecords() {
 function issueActions(row) {
   return [
     { label: '详情', onClick: () => openDetail(row) },
-    { label: '记录单', icon: Printer, onClick: () => printRecord(row.id) },
+    { label: '记录单', icon: Printer, emphasis: true, onClick: () => printRecord(row.id) },
   ]
 }
 

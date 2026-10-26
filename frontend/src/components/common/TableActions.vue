@@ -33,6 +33,7 @@ function run(action) {
         :icon="action.icon"
         :loading="action.loading"
         :disabled="action.disabled"
+        :class="['table-action', `is-${action.type || 'primary'}`, { 'is-emphasis': action.emphasis }]"
         @click="run(action)"
       >
         <span v-if="!action.iconOnly">{{ action.label }}</span>
@@ -75,6 +76,8 @@ function run(action) {
   font-size: 12px;
   line-height: 1;
   flex: 0 0 auto;
+  border-radius: 4px;
+  transition: background 180ms ease-out, color 180ms ease-out, box-shadow 180ms ease-out, transform 180ms ease-out;
 }
 
 .table-actions :deep(.el-button + .el-button) {
@@ -90,5 +93,73 @@ function run(action) {
   gap: 3px;
   align-items: center;
   line-height: 1;
+}
+
+.table-actions :deep(.el-button.table-action:not(.is-emphasis):hover) {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(34, 211, 238, 0.09));
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+.table-actions :deep(.el-button.table-action.is-danger:not(.is-emphasis):hover) {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.11), rgba(251, 113, 133, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.12);
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis) {
+  position: relative;
+  padding: 4px 9px;
+  overflow: hidden;
+  color: #fff;
+  background: var(--bb-primary-gradient);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px -8px rgba(37, 99, 235, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis.is-warning) {
+  background: var(--bb-warning-gradient);
+  box-shadow: 0 4px 12px -8px rgba(217, 119, 6, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis.is-success) {
+  background: var(--bb-success-gradient);
+  box-shadow: 0 4px 12px -8px rgba(5, 150, 105, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis.is-danger) {
+  background: var(--bb-danger-gradient);
+  box-shadow: 0 4px 12px -8px rgba(220, 38, 38, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis::after) {
+  position: absolute;
+  inset: -20% -40%;
+  content: "";
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.4) 48%, transparent 66%);
+  transform: translateX(-130%) skewX(-10deg);
+  transition: transform 520ms ease-out;
+  pointer-events: none;
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis:hover) {
+  color: #fff;
+  filter: brightness(1.07) saturate(1.04);
+  transform: translateY(-1px);
+}
+
+.table-actions :deep(.el-button.table-action.is-emphasis:hover::after) {
+  transform: translateX(130%) skewX(-10deg);
+}
+
+.table-actions :deep(.el-button.table-action:hover .el-icon:not(.is-loading)) {
+  transform: translateY(-1px) scale(1.07);
+}
+
+.table-actions :deep(.el-dropdown .el-button) {
+  border-radius: 4px;
+}
+
+.table-actions :deep(.el-dropdown .el-button:hover) {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(34, 211, 238, 0.08));
 }
 </style>

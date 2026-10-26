@@ -148,10 +148,11 @@ function executeActions(row) {
       ? {
           label: '确认执行',
           icon: FirstAidKit,
+          emphasis: true,
           loading: executingId.value === row.id,
           onClick: () => execute(row),
         }
-      : { label: '上报反应', type: 'warning', icon: Warning, onClick: () => openAdverse(row) },
+      : { label: '上报反应', type: 'warning', icon: Warning, emphasis: true, onClick: () => openAdverse(row) },
     { label: '记录单', icon: Printer, onClick: () => printRecord(row.id) },
   ]
 }

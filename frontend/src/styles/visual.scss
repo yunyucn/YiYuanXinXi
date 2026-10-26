@@ -1,6 +1,9 @@
 /* Unified clinical visual layer: restrained gradients, crisp surfaces, PC-first. */
 :root {
-  --bb-primary-gradient: linear-gradient(135deg, #1d4ed8 0%, #2563eb 56%, #3b82f6 100%);
+  --bb-primary-gradient: linear-gradient(120deg, #1e3a8a 0%, #2563eb 42%, #0284c7 76%, #38bdf8 100%);
+  --bb-success-gradient: linear-gradient(135deg, #047857 0%, #059669 52%, #34d399 100%);
+  --bb-warning-gradient: linear-gradient(135deg, #b45309 0%, #d97706 52%, #fbbf24 100%);
+  --bb-danger-gradient: linear-gradient(135deg, #b91c1c 0%, #dc2626 52%, #fb7185 100%);
   --bb-primary-soft: #eff6ff;
   --bb-panel-tint: rgba(239, 246, 255, 0.74);
   --bb-table-head: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
@@ -18,7 +21,16 @@ html.dark {
 }
 
 .main-content {
-  background-image: radial-gradient(920px 420px at 74% -10%, rgba(37, 99, 235, 0.07), transparent 72%);
+  background-image:
+    radial-gradient(920px 420px at 74% -10%, rgba(37, 99, 235, 0.08), transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cg fill='%232563eb' fill-opacity='0.055'%3E%3Ccircle cx='18' cy='18' r='1.1'/%3E%3Ccircle cx='90' cy='54' r='0.9'/%3E%3Ccircle cx='150' cy='18' r='1'/%3E%3Ccircle cx='54' cy='126' r='1'/%3E%3Ccircle cx='126' cy='162' r='0.9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, 180px 180px;
+}
+
+html.dark .main-content {
+  background-image:
+    radial-gradient(920px 420px at 74% -10%, rgba(56, 189, 248, 0.08), transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cg fill='%2394a3b8' fill-opacity='0.065'%3E%3Ccircle cx='18' cy='18' r='1.1'/%3E%3Ccircle cx='90' cy='54' r='0.9'/%3E%3Ccircle cx='150' cy='18' r='1'/%3E%3Ccircle cx='54' cy='126' r='1'/%3E%3Ccircle cx='126' cy='162' r='0.9'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .page {
@@ -75,9 +87,37 @@ html.dark .page-card:hover {
 }
 
 .stat-card {
-  background: linear-gradient(180deg, var(--bb-panel-tint) 0, var(--bb-card) 78%);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(56, 189, 248, 0.16), transparent 58%),
+    linear-gradient(180deg, var(--bb-panel-tint) 0, var(--bb-card) 78%);
   box-shadow: var(--bb-shadow-soft);
   transition: transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
+}
+
+.stat-card > *:not(.decor-pattern) {
+  position: relative;
+  z-index: 1;
+}
+
+.stat-card.amber {
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(251, 191, 36, 0.18), transparent 58%),
+    linear-gradient(180deg, var(--bb-panel-tint) 0, var(--bb-card) 78%);
+}
+
+.stat-card.red {
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(251, 113, 133, 0.16), transparent 58%),
+    linear-gradient(180deg, var(--bb-panel-tint) 0, var(--bb-card) 78%);
+}
+
+.stat-card.green {
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(52, 211, 153, 0.17), transparent 58%),
+    linear-gradient(180deg, var(--bb-panel-tint) 0, var(--bb-card) 78%);
 }
 
 .stat-card:hover {
@@ -101,9 +141,22 @@ html.dark .scan-icon {
 }
 
 .el-button--primary:not(.is-text):not(.is-link):not(.is-plain) {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   background: var(--bb-primary-gradient);
   border-color: #1d4ed8;
   box-shadow: 0 5px 14px -8px rgba(37, 99, 235, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.el-button--primary:not(.is-text):not(.is-link):not(.is-plain)::after {
+  position: absolute;
+  inset: -20% -35%;
+  content: "";
+  background: linear-gradient(110deg, transparent 32%, rgba(255, 255, 255, 0.34) 48%, transparent 64%);
+  transform: translateX(-130%) skewX(-10deg);
+  transition: transform 520ms ease-out;
+  pointer-events: none;
 }
 
 .el-button--primary:not(.is-text):not(.is-link):not(.is-plain):hover {
@@ -111,8 +164,37 @@ html.dark .scan-icon {
   box-shadow: 0 8px 20px -10px rgba(37, 99, 235, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
+.el-button--primary:not(.is-text):not(.is-link):not(.is-plain):hover::after {
+  transform: translateX(130%) skewX(-10deg);
+}
+
 .el-button--primary:not(.is-text):not(.is-link):not(.is-plain):focus-visible {
   box-shadow: var(--bb-focus-ring), 0 6px 16px -10px rgba(37, 99, 235, 0.9);
+}
+
+.el-button:not(.is-text):not(.is-link):not(.is-plain):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-disabled) {
+  position: relative;
+  overflow: hidden;
+}
+
+.el-button:not(.is-text):not(.is-link):not(.is-plain):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-disabled):hover {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 58%, #e0f2fe 100%);
+  border-color: #a8c7fa;
+  box-shadow: 0 7px 16px -12px rgba(37, 99, 235, 0.55);
+  transform: translateY(-1px);
+}
+
+html.dark .el-button:not(.is-text):not(.is-link):not(.is-plain):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-disabled):hover {
+  background: linear-gradient(135deg, #2c3b50 0%, #263449 58%, #213e56 100%);
+  border-color: #3b5f96;
+}
+
+.el-button .el-icon {
+  transition: transform 180ms ease-out;
+}
+
+.el-button:not(.is-disabled):hover .el-icon:not(.is-loading) {
+  transform: translateY(-1px) scale(1.06);
 }
 
 .el-tabs__active-bar {

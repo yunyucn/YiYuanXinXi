@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { Check, Delete, Plus, Refresh, Search } from '@element-plus/icons-vue'
 import { bagApi, scrapApi } from '@/api'
 import { useAuthStore } from '@/store/auth'
 import { formatDate, formatDateTime } from '@/utils/format'
@@ -141,7 +141,7 @@ async function review(row, approved) {
 
 function scrapActions(row) {
   return [
-    { label: '批准', type: 'success', onClick: () => review(row, true) },
+    { label: '批准', type: 'success', icon: Check, emphasis: true, onClick: () => review(row, true) },
     { label: '驳回', type: 'danger', onClick: () => review(row, false) },
   ]
 }
@@ -211,7 +211,7 @@ onMounted(loadItems)
         <el-table-column label="报废日期" width="108">
           <template #default="{ row }">{{ formatDate(row.scrap_date) }}</template>
         </el-table-column>
-        <el-table-column v-if="canApprove" label="操作" width="118" fixed="right" align="center">
+        <el-table-column v-if="canApprove" label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <TableActions v-if="row.approval_status === '待审批'" :actions="scrapActions(row)" />
             <span v-else class="muted">已处理</span>
