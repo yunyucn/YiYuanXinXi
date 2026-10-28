@@ -185,6 +185,7 @@ YiYuanXinXi/
 
 - 数据库为本地 SQLite 文件，适合单机部署与离线环境。
 - `python init_db.py` 会重建表并写入基础数据，执行前请确认无需保留现有数据。
+- SQLite 不支持 MySQL 式原生表与字段 `COMMENT`，中文注释通过 SQLAlchemy 元数据和数据库内的 `schema_comment` 字典表保存。
 - 16 张数据表、163 个字段均配置中文注释，并同步到数据库内的 `schema_comment` 表；完整清单见 [docs/数据库字典.md](docs/数据库字典.md)。
 - 模型或字段调整后执行 `python backend/export_schema_doc.py` 重新生成数据库字典。
 - 仓库不提交数据库文件、日志、环境变量和本机启停脚本。
