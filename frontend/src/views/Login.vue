@@ -48,7 +48,8 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(form)
-    await appStore.fetchAlertSummary()
+    if (auth.canAccess('alerts')) await appStore.fetchAlertSummary()
+    else appStore.clearAlertSummary()
     ElMessage.success(`欢迎回来，${auth.user.real_name}`)
     router.replace(route.query.redirect || '/dashboard')
   } catch {

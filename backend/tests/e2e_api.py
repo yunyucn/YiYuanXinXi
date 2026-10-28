@@ -260,11 +260,17 @@ def run(base_url, timeout_seconds):
     doctor_logs = client.call("GET", "/system/logs", token=doctor, expected=(403,))
     nurse_logs = client.call("GET", "/system/logs", token=nurse, expected=(403,))
     doctor_create = client.call("POST", "/system/users", token=doctor, payload={}, expected=(403,))
+    doctor_alerts = client.call("GET", "/alerts/summary", token=doctor, expected=(403,))
+    nurse_alerts = client.call("GET", "/alerts/summary", token=nurse, expected=(403,))
+    doctor_stock = client.call("GET", "/blood-bags", token=doctor, expected=(403,))
     for label, envelope in (
         ("未登录", anonymous),
         ("医生查询日志", doctor_logs),
         ("护士查询日志", nurse_logs),
         ("医生新增用户", doctor_create),
+        ("医生读取预警待办", doctor_alerts),
+        ("护士读取预警待办", nurse_alerts),
+        ("医生读取库存", doctor_stock),
     ):
         print(f"  {label}：HTTP {envelope.get('code')}，{envelope.get('msg')}")
 

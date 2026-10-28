@@ -1,8 +1,6 @@
 from datetime import date, datetime
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
-
 from models import BloodBag, CrossMatch, IssueRecord, TransfusionRequest, db
 from utils.auth import add_operation_log, current_user, roles_required
 from utils.responses import fail, ok, page_data
@@ -41,7 +39,7 @@ def pending_issues():
 
 
 @bp.get("/issues")
-@jwt_required()
+@roles_required("tech", "nurse")
 def list_issues():
     query = IssueRecord.query
     execution_status = request.args.get("execution_status")
@@ -66,7 +64,7 @@ def list_issues():
 
 
 @bp.get("/issues/<int:issue_id>")
-@jwt_required()
+@roles_required("tech", "nurse")
 def get_issue(issue_id):
     issue = db.session.get(IssueRecord, issue_id)
     if not issue:

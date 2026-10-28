@@ -1,8 +1,6 @@
 from datetime import datetime
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
-
 from models import AdverseReaction, BloodBag, IssueRecord, db
 from utils.auth import add_operation_log, current_user, roles_required
 from utils.responses import fail, ok, page_data
@@ -23,7 +21,7 @@ def parse_datetime(value):
 
 
 @bp.get("/adverse-reactions")
-@jwt_required()
+@roles_required("nurse", "tech", "director")
 def list_reactions():
     query = AdverseReaction.query
     admission_no = request.args.get("admission_no", "").strip()
@@ -45,7 +43,7 @@ def list_reactions():
 
 
 @bp.get("/adverse-reactions/<int:reaction_id>")
-@jwt_required()
+@roles_required("nurse", "tech", "director")
 def get_reaction(reaction_id):
     item = db.session.get(AdverseReaction, reaction_id)
     if not item:

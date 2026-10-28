@@ -4,17 +4,20 @@ import { useRouter } from 'vue-router'
 import { Box, Clock, FirstAidKit, Warning } from '@element-plus/icons-vue'
 import { dashboardApi } from '@/api'
 import { useAppStore } from '@/store/app'
+import { useAuthStore } from '@/store/auth'
 import { chartSplitColor, chartTextColor, disposeCharts, initChart } from '@/utils/echarts'
 import { formatDateTime } from '@/utils/format'
 
 const router = useRouter()
 const appStore = useAppStore()
+const auth = useAuthStore()
 const loading = ref(false)
 const summary = ref(null)
 const trendRef = ref(null)
 const typeRef = ref(null)
 let trendChart = null
 let typeChart = null
+const canViewAlerts = computed(() => auth.canAccess('alerts'))
 
 const cards = computed(() => {
   const data = summary.value?.cards || {}
@@ -210,7 +213,7 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
       </section>
     </div>
 
-    <section class="page-card alert-section">
+    <section v-if="canViewAlerts" class="page-card alert-section">
       <div class="card-head">
         <div>
           <h3>预警待办</h3>

@@ -28,7 +28,7 @@ def list_departments():
 
 
 @bp.get("/system/roles")
-@jwt_required()
+@roles_required()
 def list_roles():
     return ok([item.to_dict() for item in Role.query.order_by(Role.id).all()])
 

@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { alertApi } from '@/api'
+import { ACCESS, hasAnyRole } from '@/constants/access'
+import { useAuthStore } from '@/store/auth'
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -22,7 +24,17 @@ export const useAppStore = defineStore('app', {
       localStorage.setItem('bloodbank_theme', this.dark ? 'dark' : 'light')
       this.applyTheme()
     },
+    clearAlertSummary() {
+      this.alertCount = 0
+      this.latestAlerts = []
+      this.bellBounce = false
+    },
     async fetchAlertSummary(bounce = false) {
+      const auth = useAuthStore()
+      if (!auth.user || !hasAnyRole(auth.role, ACCESS.alerts)) {
+        this.clearAlertSummary()
+        return
+      }
       try {
         const data = await alertApi.summary()
         this.alertCount = data.red_count
@@ -34,7 +46,7 @@ export const useAppStore = defineStore('app', {
           }, 420)
         }
       } catch {
-        this.alertCount = 0
+        this.clearAlertSummary()
       }
     },
   },

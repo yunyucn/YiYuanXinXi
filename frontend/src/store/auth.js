@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { authApi } from '@/api'
+import { ACCESS, hasAnyRole } from '@/constants/access'
 
 function readUser() {
   try {
@@ -17,6 +18,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     role: (state) => state.user?.role || '',
     isLoggedIn: (state) => Boolean(state.token),
+    canAccess: (state) => (permission) => hasAnyRole(state.user?.role, ACCESS[permission]),
   },
   actions: {
     async login(payload) {
@@ -46,7 +48,7 @@ export const useAuthStore = defineStore('auth', {
     },
     hasRole(roles) {
       if (!roles || !roles.length) return true
-      return this.role === 'admin' || roles.includes(this.role)
+      return hasAnyRole(this.role, roles)
     },
   },
 })

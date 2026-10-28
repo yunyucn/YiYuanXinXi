@@ -19,6 +19,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useAppStore } from '@/store/app'
 import { useAuthStore } from '@/store/auth'
+import { ACCESS } from '@/constants/access'
 import { formatDateTime } from '@/utils/format'
 
 const route = useRoute()
@@ -43,32 +44,32 @@ const menus = [
     label: '血液管理',
     icon: Box,
     children: [
-      { path: '/in', label: '血液入库', icon: Document, roles: ['tech'] },
-      { path: '/stock', label: '库存管理', icon: Box, roles: ['tech', 'nurse', 'director'] },
-      { path: '/scrap', label: '报废管理', icon: Warning, roles: ['tech', 'director'] },
+      { path: '/in', label: '血液入库', icon: Document, roles: ACCESS.bloodIn },
+      { path: '/stock', label: '库存管理', icon: Box, roles: ACCESS.stockView },
+      { path: '/scrap', label: '报废管理', icon: Warning, roles: ACCESS.scrapView },
     ],
   },
   {
     label: '输血管理',
     icon: Connection,
     children: [
-      { path: '/requests', label: '输血申请', icon: Document, roles: ['doctor', 'tech', 'director'] },
-      { path: '/cross-match', label: '配血工作台', icon: Connection, roles: ['tech'] },
-      { path: '/issue', label: '发血工作台', icon: FirstAidKit, roles: ['tech'] },
-      { path: '/execute', label: '输血执行', icon: FirstAidKit, roles: ['nurse'] },
-      { path: '/trace', label: '全周期追溯', icon: Connection },
+      { path: '/requests', label: '输血申请', icon: Document, roles: ACCESS.requestView },
+      { path: '/cross-match', label: '配血工作台', icon: Connection, roles: ACCESS.crossMatch },
+      { path: '/issue', label: '发血工作台', icon: FirstAidKit, roles: ACCESS.issue },
+      { path: '/execute', label: '输血执行', icon: FirstAidKit, roles: ACCESS.execute },
+      { path: '/trace', label: '全周期追溯', icon: Connection, roles: ACCESS.trace },
     ],
   },
   {
     label: '质控与统计',
     icon: DataAnalysis,
     children: [
-      { path: '/alerts', label: '预警中心', icon: Warning, roles: ['tech', 'director'] },
-      { path: '/adverse', label: '不良反应', icon: Warning, roles: ['nurse', 'tech', 'director'] },
-      { path: '/report', label: '统计报表', icon: DataAnalysis, roles: ['director'] },
+      { path: '/alerts', label: '预警中心', icon: Warning, roles: ACCESS.alerts },
+      { path: '/adverse', label: '不良反应', icon: Warning, roles: ACCESS.adverse },
+      { path: '/report', label: '统计报表', icon: DataAnalysis, roles: ACCESS.report },
     ],
   },
-  { path: '/system', label: '系统管理', icon: Setting, roles: ['admin'] },
+  { path: '/system', label: '系统管理', icon: Setting, roles: ACCESS.system },
 ]
 
 const visibleMenus = computed(() =>
@@ -84,6 +85,7 @@ const visibleMenus = computed(() =>
 
 const currentTitle = computed(() => route.meta.title || '输血管理分系统')
 const userInitial = computed(() => auth.user?.real_name?.slice(0, 1) || '血')
+const canViewAlerts = computed(() => auth.canAccess('alerts'))
 
 function levelClass(level) {
   return { 严重: 'danger', 警告: 'warning', 提示: 'info' }[level] || 'info'
@@ -92,6 +94,7 @@ function levelClass(level) {
 async function handleCommand(command) {
   if (command === 'logout') {
     await ElMessageBox.confirm('确认退出当前账号吗？', '退出登录', { type: 'warning' })
+    appStore.clearAlertSummary()
     await auth.logout()
     router.replace('/login')
   } else if (command === 'trace') {
@@ -100,6 +103,7 @@ async function handleCommand(command) {
 }
 
 function goAlert() {
+  if (!canViewAlerts.value) return
   bellRef.value?.hide?.()
   router.push('/alerts')
 }
@@ -116,8 +120,12 @@ function retryRoute() {
 }
 
 onMounted(() => {
-  appStore.fetchAlertSummary()
-  timer = window.setInterval(() => appStore.fetchAlertSummary(), 60000)
+  if (canViewAlerts.value) {
+    appStore.fetchAlertSummary()
+    timer = window.setInterval(() => appStore.fetchAlertSummary(), 60000)
+  } else {
+    appStore.clearAlertSummary()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -148,7 +156,7 @@ onBeforeUnmount(() => {
           <strong>{{ currentTitle }}</strong>
         </div>
         <div class="header-actions">
-          <el-popover ref="bellRef" placement="bottom-end" :width="360" trigger="click">
+          <el-popover v-if="canViewAlerts" ref="bellRef" placement="bottom-end" :width="360" trigger="click">
             <template #reference>
               <button class="icon-button bell-button focusable" type="button" aria-label="预警通知" @click="appStore.fetchAlertSummary()">
                 <el-icon :size="20" :class="{ 'bell-swing': appStore.bellBounce }"><Bell /></el-icon>

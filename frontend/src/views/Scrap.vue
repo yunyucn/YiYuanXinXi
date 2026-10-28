@@ -21,8 +21,8 @@ const selectedBags = ref([])
 const scrapReason = ref('')
 const batchLoading = ref(false)
 
-const canApply = computed(() => auth.role === 'tech' || auth.role === 'admin')
-const canApprove = computed(() => auth.role === 'director' || auth.role === 'admin')
+const canApply = computed(() => auth.canAccess('scrapApply'))
+const canApprove = computed(() => auth.canAccess('scrapApprove'))
 const pendingOnPage = computed(() => items.value.filter((item) => item.approval_status === '待审批').length)
 const approvedOnPage = computed(() => items.value.filter((item) => item.approval_status === '已批准').length)
 

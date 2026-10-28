@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 
 from models import Alert, BloodBag, IssueRecord, TransfusionRequest, db
+from utils.auth import current_user
 from utils.responses import ok
 
 
@@ -16,14 +17,19 @@ LEVEL_ORDER = {"严重": 0, "警告": 1, "提示": 2}
 @bp.get("/dashboard/summary")
 @jwt_required()
 def summary():
+    user = current_user()
+    role_code = user.role.code if user and user.role else None
     today = date.today()
     today_start = datetime.combine(today, time.min)
     week_later = today + timedelta(days=7)
 
     in_stock = BloodBag.query.filter(BloodBag.status == "在库").count()
-    pending_requests = TransfusionRequest.query.filter(
+    pending_query = TransfusionRequest.query.filter(
         TransfusionRequest.status.in_(["待配血", "配血中"])
-    ).count()
+    )
+    if role_code == "doctor":
+        pending_query = pending_query.filter(TransfusionRequest.doctor_id == user.id)
+    pending_requests = pending_query.count()
     expiring = BloodBag.query.filter(
         BloodBag.status == "在库",
         BloodBag.expiry_date > today,
@@ -36,9 +42,11 @@ def summary():
     ).count()
     today_issued = IssueRecord.query.filter(IssueRecord.issued_at >= today_start).count()
 
-    alerts = Alert.query.filter_by(is_handled=False).order_by(Alert.created_at.desc()).limit(20).all()
-    alerts.sort(key=lambda item: (LEVEL_ORDER.get(item.level, 9), -item.id))
-    recent_alerts = [item.to_dict() for item in alerts[:5]]
+    recent_alerts = []
+    if role_code in ("admin", "tech", "director"):
+        alerts = Alert.query.filter_by(is_handled=False).order_by(Alert.created_at.desc()).limit(20).all()
+        alerts.sort(key=lambda item: (LEVEL_ORDER.get(item.level, 9), -item.id))
+        recent_alerts = [item.to_dict() for item in alerts[:5]]
 
     trend = []
     for offset in range(6, -1, -1):

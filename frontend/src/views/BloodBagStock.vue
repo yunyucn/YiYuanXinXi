@@ -37,7 +37,7 @@ const filters = reactive({
 
 const statuses = ['在库', '备血锁定', '已发血', '已报废', '已过期']
 const bloodTypes = ['A', 'B', 'AB', 'O']
-const canOperate = computed(() => auth.role === 'tech' || auth.role === 'admin')
+const canOperate = computed(() => auth.canAccess('stockOperate'))
 const selectedFridge = computed(() => fridgeData.value.find((item) => item.id === selectedFridgeId.value))
 
 function rowClass({ row }) {

@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
-
 from models import Alert, BloodBag, BloodProductDict, ScanLog, TransfusionRequest, db
 from utils.alerts import scan_alerts
 from utils.auth import add_operation_log, current_user, roles_required
@@ -36,7 +34,7 @@ def enrich_alert(alert):
 
 
 @bp.get("/alerts")
-@jwt_required()
+@roles_required("tech", "director")
 def list_alerts():
     query = Alert.query
     alert_type = request.args.get("type")
@@ -59,7 +57,7 @@ def list_alerts():
 
 
 @bp.get("/alerts/summary")
-@jwt_required()
+@roles_required("tech", "director")
 def alert_summary():
     unhandled = Alert.query.filter_by(is_handled=False).all()
     red_count = sum(1 for item in unhandled if item.level in ("警告", "严重"))
@@ -69,7 +67,7 @@ def alert_summary():
 
 
 @bp.get("/scan-logs")
-@jwt_required()
+@roles_required("tech", "director")
 def scan_logs():
     logs = ScanLog.query.order_by(ScanLog.scanned_at.desc()).limit(10).all()
     interval = 10

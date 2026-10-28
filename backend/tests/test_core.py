@@ -76,6 +76,79 @@ class BloodBankCoreTest(unittest.TestCase):
         forbidden = self.client.post("/api/blood-bags", headers=doctor_headers, json={})
         self.assertEqual(forbidden.status_code, 403)
 
+    def test_role_based_page_access(self):
+        admin = self.login("admin")
+        tech = self.login("tech")
+        doctor = self.login("doctor")
+        nurse = self.login("nurse")
+        director = self.login("director")
+
+        for path in ("/api/alerts", "/api/alerts/summary", "/api/scan-logs"):
+            self.assertEqual(self.client.get(path, headers=doctor).status_code, 403, path)
+            self.assertEqual(self.client.get(path, headers=nurse).status_code, 403, path)
+            self.assertEqual(self.client.get(path, headers=tech).status_code, 200, path)
+            self.assertEqual(self.client.get(path, headers=director).status_code, 200, path)
+            self.assertEqual(self.client.get(path, headers=admin).status_code, 200, path)
+
+        for headers in (doctor, nurse):
+            dashboard = self.client.get("/api/dashboard/summary", headers=headers)
+            self.assertEqual(dashboard.status_code, 200)
+            self.assertEqual(dashboard.get_json()["data"]["recent_alerts"], [])
+
+        self.assertEqual(self.client.get("/api/blood-bags", headers=doctor).status_code, 403)
+        for headers in (tech, nurse, director):
+            self.assertEqual(self.client.get("/api/blood-bags", headers=headers).status_code, 200)
+
+        self.assertEqual(self.client.get("/api/cross-matches", headers=doctor).status_code, 403)
+        self.assertEqual(self.client.get("/api/cross-matches", headers=nurse).status_code, 403)
+        self.assertEqual(self.client.get("/api/cross-matches", headers=tech).status_code, 200)
+
+        self.assertEqual(self.client.get("/api/issues", headers=doctor).status_code, 403)
+        self.assertEqual(self.client.get("/api/issues", headers=nurse).status_code, 200)
+        self.assertEqual(self.client.get("/api/issues", headers=tech).status_code, 200)
+
+        self.assertEqual(self.client.get("/api/adverse-reactions", headers=doctor).status_code, 403)
+        for headers in (nurse, tech, director):
+            self.assertEqual(self.client.get("/api/adverse-reactions", headers=headers).status_code, 200)
+
+        self.assertEqual(self.client.get("/api/requests", headers=nurse).status_code, 403)
+        for headers in (doctor, tech, director):
+            self.assertEqual(self.client.get("/api/requests", headers=headers).status_code, 200)
+
+        self.assertEqual(self.client.get("/api/system/roles", headers=doctor).status_code, 403)
+        self.assertEqual(self.client.get("/api/system/roles", headers=admin).status_code, 200)
+
+        created_user = self.client.post(
+            "/api/system/users",
+            headers=admin,
+            json={"username": "rbac_doctor", "real_name": "权限测试医生", "role_code": "doctor"},
+        )
+        self.assertEqual(created_user.status_code, 201, created_user.get_json())
+        other_doctor = self.login("rbac_doctor")
+        created_request = self.client.post(
+            "/api/requests",
+            headers=other_doctor,
+            json={
+                "patient_name": "权限测试患者",
+                "admission_no": "ZY-RBAC-001",
+                "department": "内科",
+                "blood_type": "A",
+                "rh": "D阳性",
+                "diagnosis": "权限隔离测试",
+                "product_name": "悬浮红细胞",
+                "quantity": 1,
+            },
+        )
+        self.assertEqual(created_request.status_code, 201, created_request.get_json())
+        request_id = created_request.get_json()["data"]["id"]
+        self.assertEqual(self.client.get(f"/api/requests/{request_id}", headers=doctor).status_code, 403)
+        self.assertEqual(self.client.get(f"/api/requests/{request_id}", headers=nurse).status_code, 200)
+        self.assertEqual(self.client.get(f"/api/requests/{request_id}", headers=tech).status_code, 200)
+
+        doctor_requests = self.client.get("/api/requests?scope=all&page_size=100", headers=doctor)
+        self.assertEqual(doctor_requests.status_code, 200)
+        self.assertNotIn(request_id, [item["id"] for item in doctor_requests.get_json()["data"]["items"]])
+
     def test_compatibility_rules(self):
         a_recipient = {"blood_type": "A", "rh": "D阳性"}
         ab_recipient = {"blood_type": "AB", "rh": "D阳性"}

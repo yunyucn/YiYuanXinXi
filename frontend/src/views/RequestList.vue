@@ -42,7 +42,7 @@ const form = reactive({
 const statuses = ['待配血', '配血中', '已备血', '已发血', '已完成', '已取消']
 const bloodTypes = ['A', 'B', 'AB', 'O']
 const urgencies = ['常规', '紧急', '抢救']
-const canCreate = computed(() => auth.role === 'doctor' || auth.role === 'admin')
+const canCreate = computed(() => auth.canAccess('requestCreate'))
 const productMap = computed(() => Object.fromEntries(products.value.map((item) => [item.name, item])))
 const rules = {
   patient_name: [{ required: true, message: '请输入患者姓名', trigger: 'blur' }],

@@ -1,8 +1,6 @@
 from datetime import date, datetime
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
-
 from models import BloodBag, BloodProductDict, CrossMatch, TransfusionRequest, db
 from utils.auth import add_operation_log, current_user, roles_required
 from utils.compatibility import check_compatibility
@@ -24,11 +22,11 @@ def generate_request_no():
 
 
 @bp.get("/requests")
-@jwt_required()
+@roles_required("doctor", "tech", "director")
 def list_requests():
     user = current_user()
     query = TransfusionRequest.query
-    if user.role.code == "doctor" and request.args.get("scope") != "all":
+    if user.role.code == "doctor":
         query = query.filter(TransfusionRequest.doctor_id == user.id)
     status = request.args.get("status")
     urgency = request.args.get("urgency")
@@ -102,11 +100,14 @@ def create_request():
 
 
 @bp.get("/requests/<int:request_id>")
-@jwt_required()
+@roles_required("doctor", "nurse", "tech", "director")
 def get_request(request_id):
     item = db.session.get(TransfusionRequest, request_id)
     if not item:
         return fail("申请单不存在", 404)
+    user = current_user()
+    if user.role.code == "doctor" and item.doctor_id != user.id:
+        return fail("只能查看本人提交的申请", 403)
     data = item.to_dict()
     data["cross_matches"] = [match.to_dict() for match in item.cross_matches]
     data["issue_records"] = [issue.to_dict() for issue in item.issue_records]
@@ -128,7 +129,7 @@ def start_match(request_id):
 
 
 @bp.post("/requests/<int:request_id>/cancel")
-@jwt_required()
+@roles_required("doctor")
 def cancel_request(request_id):
     item = db.session.get(TransfusionRequest, request_id)
     if not item:

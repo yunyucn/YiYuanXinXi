@@ -1,8 +1,6 @@
 from datetime import date, datetime, timedelta
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
-
 from models import AdverseReaction, BloodBag, BloodProductDict, Fridge, ScrapRecord, db
 from utils.auth import add_operation_log, current_user, roles_required
 from utils.responses import fail, ok, page_data
@@ -160,7 +158,7 @@ def create_batch():
 
 
 @bp.get("/blood-bags")
-@jwt_required()
+@roles_required("tech", "nurse", "director")
 def list_bags():
     query = BloodBag.query
     status = request.args.get("status")
@@ -193,7 +191,7 @@ def list_bags():
 
 
 @bp.get("/blood-bags/<int:bag_id>")
-@jwt_required()
+@roles_required("tech", "nurse", "director")
 def get_bag(bag_id):
     bag = db.session.get(BloodBag, bag_id)
     if not bag:

@@ -1,8 +1,6 @@
 from datetime import datetime
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
-
 from models import BloodBag, CrossMatch, TransfusionRequest, db
 from utils.auth import add_operation_log, current_user, roles_required
 from utils.compatibility import check_compatibility
@@ -31,7 +29,7 @@ def pending_workbench():
 
 
 @bp.get("/cross-matches")
-@jwt_required()
+@roles_required("tech")
 def list_matches():
     query = CrossMatch.query
     request_id = request.args.get("request_id", type=int)
