@@ -120,12 +120,12 @@ flowchart TB
 
 ```powershell
 cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python init_db.py
 python app.py
 ```
+
+`pip install` 仅首次部署或更换 Python 环境时执行。
 
 前端：
 
@@ -154,23 +154,13 @@ npm run dev
 
 ## 测试与质量
 
-后端核心流程使用 `pytest` 运行，测试数据库为内存 SQLite，不会修改业务数据。
+在项目根目录执行一条命令即可完成验收自检：
 
 ```powershell
-cd backend
-python -m pytest -q
+python backend/acceptance_check.py
 ```
 
-覆盖范围包括登录鉴权与越权拦截、系统管理接口 `403`、ABO/Rh 相容性矩阵、入库复检、配血与发血、执行确认、不良反应、追溯、预警去重、报表权限和发血审计日志。
-
-主流程 HTTP 验收脚本：
-
-```powershell
-cd backend
-python tests/e2e_api.py --base-url http://127.0.0.1:5000/api
-```
-
-脚本会真实走通入库、申请、配血、发血、执行、不良反应、追溯、审计日志与越权校验，成功时输出 `ACCEPTANCE PASSED`。
+脚本自动运行 pytest、启动临时后端、走通入库、申请、配血、发血、执行、不良反应、追溯、审计日志与越权校验，结束后清理临时数据。成功时输出 `8 passed`、`ACCEPTANCE PASSED` 和 `VERIFY PASSED`。
 
 前端构建检查：
 
@@ -187,10 +177,13 @@ YiYuanXinXi/
 │  ├─ app.py                 # Flask 应用工厂、蓝图注册、JWT 错误处理
 │  ├─ config.py              # 配置与数据库路径
 │  ├─ models.py              # 核心数据模型
+│  ├─ schema.py              # 数据表与字段中文注释
 │  ├─ init_db.py             # 建表与种子数据
+│  ├─ export_schema_doc.py   # 生成数据库字典
 │  ├─ routes/                # 登录、入库、申请、配血、发血、预警等接口
 │  ├─ utils/                 # JWT/RBAC、相容性规则、预警扫描
-│  └─ tests/                 # 核心业务流程测试
+│  ├─ tests/                 # 核心业务流程测试
+│  └─ acceptance_check.py    # 一条命令完成 pytest 与 HTTP 主流程
 ├─ frontend/
 │  ├─ src/api/               # Axios 封装与接口集合
 │  ├─ src/components/        # 业务组件、SVG 装饰与表格操作列
@@ -204,12 +197,15 @@ YiYuanXinXi/
 
 - 数据库为本地 SQLite 文件，适合单机部署与离线环境。
 - `python init_db.py` 会重建表并写入基础数据，执行前请确认无需保留现有数据。
+- 16 张数据表、163 个字段均配置中文注释，并同步到数据库内的 `schema_comment` 表；完整清单见 [docs/数据库字典.md](docs/数据库字典.md)。
+- 模型或字段调整后执行 `python backend/export_schema_doc.py` 重新生成数据库字典。
 - 生产或真实业务环境应配置独立密钥、HTTPS、数据库备份与访问审计。
 - 本项目用于管理软件与输血业务实践，不替代医院正式信息系统或临床决策，实际使用需按所在机构规范完成验收。
 
 ## 文档
 
 - 技术方案与数据库设计：[docs/design.md](docs/design.md)
+- 数据库表字段字典：[docs/数据库字典.md](docs/数据库字典.md)
 - 功能核验与系统边界：[docs/验收说明.md](docs/验收说明.md)
 - 现场演示与测试命令：[docs/验收操作手册.md](docs/验收操作手册.md)
 - AI 协作过程与人工介入：[docs/AI协作记录.md](docs/AI协作记录.md)

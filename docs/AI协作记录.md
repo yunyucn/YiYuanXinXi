@@ -45,16 +45,13 @@ AI 没有被要求一次性生成全部系统，而是按领域拆分：基础�
 本次验收补齐后的可重复证据：
 
 ```text
-backend> python -m pytest -q
-7 passed
-```
-
-```text
-backend> python tests/e2e_api.py --base-url http://127.0.0.1:5000/api
+project> python backend/acceptance_check.py
+8 passed
 ACCEPTANCE PASSED
+VERIFY PASSED
 ```
 
-E2E 同时打印申请单号、发血记录号、审计日志证据，并验证普通角色访问系统管理接口返回 403。
+自检入口会自动创建临时数据库和临时后端，E2E 同时打印申请单号、发血记录号、审计日志证据，并验证普通角色访问系统管理接口返回 403。
 
 ## 6. 答辩建议
 

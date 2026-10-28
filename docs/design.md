@@ -30,6 +30,8 @@
 - `alert` 与 `scan_log`：预警类型与级别、关联对象、处理状态、扫描时间与扫描结果。
 - `user`、`role`、`department`、`blood_product_dict`、`operation_log`：账号权限、科室字典、品种保质期与安全库存、审计日志。
 
+SQLite 不保存 MySQL/PostgreSQL 式的原生表注释和列注释。系统在 SQLAlchemy 模型元数据中维护表与字段 `comment`，启动或初始化时将同一份说明同步到 `schema_comment` 字典表；当前覆盖 16 张表、163 个字段。完整字段、类型、主外键、可空性与中文说明见 `docs/数据库字典.md`，模型调整后可执行 `python backend/export_schema_doc.py` 重新生成。
+
 ## 4. 关键状态机
 
 ### 4.1 血袋
@@ -103,7 +105,7 @@ APScheduler 启动即扫描，之后每 10 分钟执行。扫描覆盖临期、�
 
 ## 9. 测试与验收
 
-- 后端使用 `pytest` 运行现有 `unittest` 风格用例，覆盖登录鉴权、系统管理越权、相容性、入库复检、配血发血执行、不良反应、追溯、预警去重与报表权限。
-- `backend/tests/e2e_api.py` 通过真实 HTTP 请求跑通主流程，并反查发血审计日志和验证普通角色访问系统管理接口返回 403。
+- 后端使用 `pytest` 运行现有 `unittest` 风格用例，覆盖登录鉴权、系统管理越权、相容性、入库复检、配血发血执行、不良反应、追溯、预警去重、报表权限与数据库表字段注释完整性。
+- `backend/acceptance_check.py` 用一条命令运行 pytest，并自动启动临时后端执行 `backend/tests/e2e_api.py`，反查发血审计日志和验证普通角色访问系统管理接口返回 403。
 - 前端执行 `npm run build` 验证按需组件、路由与样式编译。
 - 课堂验收使用 1440×900，兼顾 1280×720 操作列与表格滚动表现。
