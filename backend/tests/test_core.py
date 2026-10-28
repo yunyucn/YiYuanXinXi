@@ -216,6 +216,7 @@ class BloodBankCoreTest(unittest.TestCase):
         )
         self.assertEqual(issued.status_code, 201, issued.get_json())
         issue_id = issued.get_json()["data"]["id"]
+        issue_record_no = issued.get_json()["data"]["record_no"]
 
         executed = self.client.post(f"/api/issues/{issue_id}/execute", headers=nurse)
         self.assertEqual(executed.status_code, 200, executed.get_json())
@@ -244,6 +245,41 @@ class BloodBankCoreTest(unittest.TestCase):
         self.assertTrue({"request", "cross_match", "issue", "execution", "adverse"}.issubset(event_types))
         self.assertTrue(any(item["level"] == "danger" and item["title"] == "配血不相容" for item in trace_data["events"]))
         self.assertTrue(any(item["level"] == "warning" and item["title"] == "输血不良反应" for item in trace_data["events"]))
+
+        admin = self.login("admin")
+        audit_logs = self.client.get(
+            "/api/system/logs",
+            headers=admin,
+            query_string={"keyword": "发血", "page_size": 100},
+        )
+        self.assertEqual(audit_logs.status_code, 200, audit_logs.get_json())
+        audit_items = audit_logs.get_json()["data"]["items"]
+        self.assertTrue(
+            any(
+                item["action"] == "完成发血" and item["target_id"] == issue_record_no
+                for item in audit_items
+            ),
+            "发血操作未写入可查询的审计日志",
+        )
+
+    def test_system_admin_endpoints_reject_non_admin(self):
+        anonymous = self.client.get("/api/system/users")
+        self.assertEqual(anonymous.status_code, 401)
+
+        doctor = self.login("doctor")
+        nurse = self.login("nurse")
+        admin = self.login("admin")
+
+        self.assertEqual(self.client.get("/api/system/users", headers=doctor).status_code, 403)
+        self.assertEqual(self.client.get("/api/system/logs", headers=doctor).status_code, 403)
+        self.assertEqual(self.client.get("/api/system/logs", headers=nurse).status_code, 403)
+        self.assertEqual(
+            self.client.post("/api/system/users", headers=doctor, json={}).status_code,
+            403,
+        )
+
+        self.assertEqual(self.client.get("/api/system/users", headers=admin).status_code, 200)
+        self.assertEqual(self.client.get("/api/system/logs", headers=admin).status_code, 200)
 
     def test_alert_scan_and_red_dot_count(self):
         tech = self.login("tech")
