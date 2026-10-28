@@ -114,13 +114,7 @@ flowchart TB
 - Python 3.10 及以上
 - Node.js 18 及以上
 
-### 一键启动
-
-双击项目根目录的 `start.bat`，脚本会分别打开后端与前端命令行窗口，并自动打开浏览器。
-
-关闭服务可双击 `stop.bat`，或在对应命令行窗口按 `Ctrl + C`。
-
-### 手动启动
+### 启动服务
 
 后端：
 
@@ -160,14 +154,23 @@ npm run dev
 
 ## 测试与质量
 
-后端核心流程使用 Python 内置 `unittest` 覆盖，测试数据库为内存 SQLite，不会修改业务数据。
+后端核心流程使用 `pytest` 运行，测试数据库为内存 SQLite，不会修改业务数据。
 
 ```powershell
 cd backend
-python -m unittest discover -s tests -v
+python -m pytest -q
 ```
 
-覆盖范围包括登录鉴权与越权拦截、ABO/Rh 相容性矩阵、入库复检、配血与发血、执行确认、不良反应、追溯、预警去重与报表权限。
+覆盖范围包括登录鉴权与越权拦截、系统管理接口 `403`、ABO/Rh 相容性矩阵、入库复检、配血与发血、执行确认、不良反应、追溯、预警去重、报表权限和发血审计日志。
+
+主流程 HTTP 验收脚本：
+
+```powershell
+cd backend
+python tests/e2e_api.py --base-url http://127.0.0.1:5000/api
+```
+
+脚本会真实走通入库、申请、配血、发血、执行、不良反应、追溯、审计日志与越权校验，成功时输出 `ACCEPTANCE PASSED`。
 
 前端构建检查：
 
@@ -194,9 +197,7 @@ YiYuanXinXi/
 │  ├─ src/layouts/           # 顶栏与侧边栏主框架
 │  ├─ src/views/             # 业务页面与打印视图
 │  └─ src/styles/            # 主题、交互、视觉与打印样式
-├─ docs/                     # 技术方案与项目文档
-├─ start.bat                 # 一键启动
-└─ stop.bat                  # 一键关闭
+└─ docs/                     # 技术方案与项目文档
 ```
 
 ## 部署与数据说明
@@ -209,3 +210,6 @@ YiYuanXinXi/
 ## 文档
 
 - 技术方案与数据库设计：[docs/design.md](docs/design.md)
+- 功能核验与系统边界：[docs/验收说明.md](docs/验收说明.md)
+- 现场演示与测试命令：[docs/验收操作手册.md](docs/验收操作手册.md)
+- AI 协作过程与人工介入：[docs/AI协作记录.md](docs/AI协作记录.md)
