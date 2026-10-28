@@ -175,13 +175,13 @@ onMounted(loadAll)
       <el-tabs v-model="activeTab">
         <el-tab-pane label="预警列表" name="alerts">
           <div class="filter-bar">
-            <el-select v-model="filters.type" clearable placeholder="预警类型" style="width: 150px">
+            <el-select v-model="filters.type" clearable placeholder="预警类型" style="width: 150px" @change="search">
               <el-option v-for="item in alertTypes" :key="item" :label="item" :value="item" />
             </el-select>
-            <el-select v-model="filters.level" clearable placeholder="预警级别" style="width: 130px">
+            <el-select v-model="filters.level" clearable placeholder="预警级别" style="width: 130px" @change="search">
               <el-option v-for="item in levels" :key="item" :label="item" :value="item" />
             </el-select>
-            <el-select v-model="filters.handled" clearable placeholder="处理状态" style="width: 130px">
+            <el-select v-model="filters.handled" clearable placeholder="处理状态" style="width: 130px" @change="search">
               <el-option label="未处理" value="0" />
               <el-option label="已处理" value="1" />
             </el-select>

@@ -168,10 +168,10 @@ onMounted(async () => {
         <el-input v-model="filters.keyword" placeholder="申请单号 / 患者 / 住院号" clearable style="width: 230px" @keyup.enter="search">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
-        <el-select v-model="filters.status" placeholder="申请状态" clearable style="width: 130px">
+        <el-select v-model="filters.status" placeholder="申请状态" clearable style="width: 130px" @change="search">
           <el-option v-for="status in statuses" :key="status" :label="status" :value="status" />
         </el-select>
-        <el-select v-model="filters.urgency" placeholder="紧急程度" clearable style="width: 120px">
+        <el-select v-model="filters.urgency" placeholder="紧急程度" clearable style="width: 120px" @change="search">
           <el-option v-for="urgency in urgencies" :key="urgency" :label="urgency" :value="urgency" />
         </el-select>
         <el-button type="primary" @click="search">查询</el-button>

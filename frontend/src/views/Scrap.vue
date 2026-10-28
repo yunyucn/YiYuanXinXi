@@ -176,7 +176,7 @@ onMounted(loadItems)
     <section class="page-card">
       <div class="filter-bar">
         <el-input v-model="filters.keyword" :prefix-icon="Search" clearable placeholder="储血号 / 报废原因" style="width: 250px" @keyup.enter="search" />
-        <el-select v-model="filters.approval_status" clearable placeholder="审批状态" style="width: 140px">
+        <el-select v-model="filters.approval_status" clearable placeholder="审批状态" style="width: 140px" @change="search">
           <el-option label="待审批" value="待审批" />
           <el-option label="已批准" value="已批准" />
           <el-option label="已驳回" value="已驳回" />

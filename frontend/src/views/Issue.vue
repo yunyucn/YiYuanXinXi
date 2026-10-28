@@ -270,7 +270,7 @@ onMounted(refreshAll)
       <el-tab-pane label="发血记录" name="records">
         <div class="filter-bar">
           <el-input v-model="filters.keyword" :prefix-icon="Search" clearable placeholder="记录号 / 申请单号 / 患者" style="width: 280px" @keyup.enter="searchRecords" />
-          <el-select v-model="filters.execution_status" clearable placeholder="执行状态" style="width: 140px">
+          <el-select v-model="filters.execution_status" clearable placeholder="执行状态" style="width: 140px" @change="searchRecords">
             <el-option label="待执行" value="待执行" />
             <el-option label="已完成" value="已完成" />
           </el-select>

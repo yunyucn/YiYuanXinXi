@@ -189,7 +189,7 @@ watch(() => appStore.dark, () => nextTick(renderCharts))
   <div class="page">
     <PageHeader title="统计报表" description="按日期范围统计出入库、报废、血型库存、科室用血与不良反应分布">
       <template #actions>
-        <el-date-picker v-model="range" type="daterange" value-format="YYYY-MM-DD" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 260px" />
+        <el-date-picker v-model="range" type="daterange" value-format="YYYY-MM-DD" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 260px" @change="loadReport" />
         <el-button :icon="Refresh" :loading="loading" @click="loadReport">查询</el-button>
         <el-button type="primary" :icon="Download" :loading="exporting" @click="exportCsv">导出 CSV</el-button>
       </template>

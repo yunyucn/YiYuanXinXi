@@ -178,16 +178,16 @@ onMounted(async () => {
           <el-input v-model="filters.keyword" placeholder="储血号 / 献血者编号" clearable style="width: 210px" @keyup.enter="search">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
-          <el-select v-model="filters.product_name" placeholder="血液品种" clearable style="width: 140px">
+          <el-select v-model="filters.product_name" placeholder="血液品种" clearable style="width: 140px" @change="search">
             <el-option v-for="item in products" :key="item.id" :label="item.name" :value="item.name" />
           </el-select>
-          <el-select v-model="filters.blood_type" placeholder="ABO 血型" clearable style="width: 110px">
+          <el-select v-model="filters.blood_type" placeholder="ABO 血型" clearable style="width: 110px" @change="search">
             <el-option v-for="type in bloodTypes" :key="type" :label="type" :value="type" />
           </el-select>
-          <el-select v-model="filters.status" placeholder="状态" clearable style="width: 120px">
+          <el-select v-model="filters.status" placeholder="状态" clearable style="width: 120px" @change="search">
             <el-option v-for="status in statuses" :key="status" :label="status" :value="status" />
           </el-select>
-          <el-select v-model="filters.fridge_id" placeholder="冰箱" clearable style="width: 140px">
+          <el-select v-model="filters.fridge_id" placeholder="冰箱" clearable style="width: 140px" @change="search">
             <el-option v-for="fridge in fridges" :key="fridge.id" :label="fridge.code" :value="fridge.id" />
           </el-select>
           <el-button type="primary" @click="search">查询</el-button>

@@ -99,10 +99,10 @@ onMounted(loadItems)
       <div class="filter-bar">
         <el-input v-model="filters.admission_no" clearable placeholder="住院号" style="width: 150px" @keyup.enter="search" />
         <el-input v-model="filters.bag_no" clearable placeholder="储血号" style="width: 160px" @keyup.enter="search" />
-        <el-select v-model="filters.reaction_type" clearable placeholder="反应类型" style="width: 130px">
+        <el-select v-model="filters.reaction_type" clearable placeholder="反应类型" style="width: 130px" @change="search">
           <el-option v-for="item in reactionTypes" :key="item" :label="item" :value="item" />
         </el-select>
-        <el-select v-model="filters.severity" clearable placeholder="反应程度" style="width: 130px">
+        <el-select v-model="filters.severity" clearable placeholder="反应程度" style="width: 130px" @change="search">
           <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
         </el-select>
         <el-button type="primary" :icon="Search" @click="search">查询</el-button>
