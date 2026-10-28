@@ -515,3 +515,19 @@ class CompatibilityRule(db.Model):
     category = db.Column(db.String(32), nullable=False)
     allowed = db.Column(db.Boolean, nullable=False)
     note = db.Column(db.String(255))
+
+
+class SchemaComment(db.Model):
+    __tablename__ = "schema_comment"
+
+    id = db.Column(db.Integer, primary_key=True)
+    table_name = db.Column(db.String(64), nullable=False, index=True)
+    table_comment = db.Column(db.String(255), nullable=False)
+    column_name = db.Column(db.String(64), nullable=False)
+    column_type = db.Column(db.String(64))
+    column_comment = db.Column(db.String(255), nullable=False)
+    is_primary_key = db.Column(db.Boolean, default=False, nullable=False)
+    is_nullable = db.Column(db.Boolean, default=True, nullable=False)
+    foreign_key = db.Column(db.String(255))
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)

@@ -6,7 +6,8 @@ os.environ.setdefault("SCHEDULER_ENABLED", "0")
 
 from app import create_app
 from init_db import qualified_retest, seed_database
-from models import Alert, BloodBag, BloodProductDict, Fridge, ScrapRecord, db
+from models import Alert, BloodBag, BloodProductDict, Fridge, ScrapRecord, SchemaComment, db
+from schema import SCHEMA_COMMENTS
 from utils.compatibility import check_compatibility
 
 
@@ -280,6 +281,21 @@ class BloodBankCoreTest(unittest.TestCase):
 
         self.assertEqual(self.client.get("/api/system/users", headers=admin).status_code, 200)
         self.assertEqual(self.client.get("/api/system/logs", headers=admin).status_code, 200)
+
+    def test_database_schema_comments_are_complete(self):
+        with self.app.app_context():
+            self.assertEqual(set(SCHEMA_COMMENTS), set(db.metadata.tables))
+            for table_name, table in db.metadata.tables.items():
+                self.assertTrue(table.comment, f"{table_name} 缺少表注释")
+                for column in table.columns:
+                    self.assertTrue(column.comment, f"{table_name}.{column.name} 缺少字段注释")
+
+            expected_count = sum(len(table.columns) for table in db.metadata.tables.values())
+            self.assertEqual(SchemaComment.query.count(), expected_count)
+            sample = SchemaComment.query.filter_by(table_name="blood_bag", column_name="bag_no").first()
+            self.assertIsNotNone(sample)
+            self.assertEqual(sample.table_comment, "血袋库存表")
+            self.assertEqual(sample.column_comment, "储血号")
 
     def test_alert_scan_and_red_dot_count(self):
         tech = self.login("tech")

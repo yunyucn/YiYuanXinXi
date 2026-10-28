@@ -82,6 +82,10 @@ def create_app(config_overrides=None, testing=False):
 
     with app.app_context():
         db.create_all()
+        from schema import sync_schema_comments
+
+        sync_schema_comments()
+        db.session.commit()
 
     if app.config.get("SCHEDULER_ENABLED") and not testing:
         from utils.alerts import start_scheduler

@@ -22,6 +22,7 @@ from models import (
 )
 from utils.alerts import scan_alerts
 from utils.compatibility import PLASMA_ACCEPT, RBC_ACCEPT
+from schema import sync_schema_comments
 
 
 PRODUCT_META = {
@@ -50,6 +51,7 @@ def seed_database():
     today = date.today()
     db.drop_all()
     db.create_all()
+    schema_comment_count = sync_schema_comments()
 
     roles = {
         "admin": Role(code="admin", name="血库管理员", description="全部权限"),
@@ -352,6 +354,7 @@ def seed_database():
         "users": len(users),
         "bags": counter,
         "requests": len(requests),
+        "schema_comments": schema_comment_count,
         "scan": scan_result,
     }
 
