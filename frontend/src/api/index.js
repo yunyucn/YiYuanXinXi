@@ -64,6 +64,7 @@ export const adverseApi = {
 /** 患者全流程追溯接口。 */
 export const traceApi = {
   get: (admissionNo) => request.get(`/trace/${encodeURIComponent(admissionNo)}`),
+  patients: () => request.get('/trace/patients'),
 }
 
 /** 预警中心接口。 */

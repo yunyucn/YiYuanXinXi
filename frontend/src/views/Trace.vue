@@ -1,20 +1,30 @@
 <script setup>
-/** 患者全周期追溯：按住院号聚合申请、配血、发血、执行和不良反应事件。 */
+/**
+ * 患者全周期追溯：按住院号聚合申请、配血、发血、执行和不良反应事件。
+ *
+ * 可追溯范围由后端按角色收敛：输血科/主任为全院，医生为本人开具申请的患者，
+ * 护士为本人执行或本科室患者。页面先加载“可追溯患者”清单，再按住院号
+ * 展示闭环时间轴，避免不同角色进入后都看到同一份数据。
+ */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { CircleCheck, Connection, Document, FirstAidKit, Search, Warning } from '@element-plus/icons-vue'
+import { CircleCheck, Connection, Document, FirstAidKit, Refresh, Search, Warning } from '@element-plus/icons-vue'
 import { traceApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
-const admissionNo = ref(String(route.query.admission_no || 'ZY20240512005'))
+
+const admissionNo = ref(String(route.query.admission_no || ''))
 const loading = ref(false)
 const searched = ref(false)
 const result = ref(null)
-
-const demoNumbers = ['ZY20240512005', 'ZY20240512004', 'ZY20240512001']
+const patients = ref([])
+const patientsLoading = ref(false)
+const scopeLabel = ref('')
+const scopeCode = ref('')
+const errorTip = ref('')
 
 const eventMeta = {
   request: { label: '申请', icon: Document },
@@ -24,12 +34,36 @@ const eventMeta = {
   adverse: { label: '不良反应', icon: Warning },
 }
 
+/** 追溯范围提示，随后端返回的角色范围变化。 */
+const scopeHint = computed(() => {
+  const scope = result.value?.scope || scopeCode.value
+  if (scope === 'doctor') return '仅可查看本人开具申请的患者的输血记录，跨范围查询会被拒绝'
+  if (scope === 'nurse') return '仅可查看本人执行或本科室患者的输血记录，跨范围查询会被拒绝'
+  if (scope === 'all') return '可查询全院患者的输血记录'
+  return '请从上方可追溯患者中选择，或输入范围内的住院号'
+})
+
 /** 追溯统计摘要。 */
 const summary = computed(() => result.value?.summary || { request_count: 0, bag_count: 0, adverse_count: 0 })
 /** 按时间升序排列的追溯事件。 */
 const events = computed(() => result.value?.events || [])
 
-/** 校验住院号、加载追溯数据并同步地址栏查询参数。 */
+/** 加载当前角色可追溯的患者清单。 */
+async function loadPatients() {
+  patientsLoading.value = true
+  try {
+    const data = await traceApi.patients()
+    patients.value = data.items || []
+    scopeLabel.value = data.scope_label || ''
+    scopeCode.value = data.scope || ''
+  } catch {
+    patients.value = []
+  } finally {
+    patientsLoading.value = false
+  }
+}
+
+/** 校验住院号、加载追溯数据并同步地址栏查询参数，超出范围时清空结果。 */
 async function loadTrace() {
   const value = admissionNo.value.trim()
   if (!value) {
@@ -40,15 +74,20 @@ async function loadTrace() {
   searched.value = true
   try {
     result.value = await traceApi.get(value)
+    errorTip.value = ''
     router.replace({ query: { admission_no: value } })
+  } catch {
+    // 越权或不存在时清空链路，提示弹窗由请求拦截器统一弹出
+    result.value = null
+    errorTip.value = '该住院号不在当前角色的追溯范围内，或不存在输血记录'
   } finally {
     loading.value = false
   }
 }
 
-/** 快捷查询演示住院号。 */
-function useDemo(value) {
-  admissionNo.value = value
+/** 选择可追溯患者后加载其闭环链路。 */
+function selectPatient(item) {
+  admissionNo.value = item.admission_no
   loadTrace()
 }
 
@@ -57,16 +96,52 @@ function detailEntries(detail) {
   return Object.entries(detail || {}).filter(([, value]) => value !== null && value !== undefined && value !== '')
 }
 
-onMounted(loadTrace)
+onMounted(async () => {
+  await loadPatients()
+  if (admissionNo.value) {
+    await loadTrace()
+  } else if (patients.value.length) {
+    await selectPatient(patients.value[0])
+  }
+})
 </script>
 
 <template>
   <div class="page">
-    <PageHeader title="全周期输血追溯" description="输入住院号，串联输血申请、配血、发血、执行与不良反应全过程">
+    <PageHeader
+      title="全周期输血追溯"
+      :description="scopeLabel ? `追溯范围：${scopeLabel}` : '输入住院号，串联输血申请、配血、发血、执行与不良反应全过程'"
+    >
       <template #actions>
-        <el-button v-for="item in demoNumbers" :key="item" size="small" @click="useDemo(item)">{{ item }}</el-button>
+        <el-button :icon="Refresh" :loading="patientsLoading" @click="loadPatients">刷新范围</el-button>
       </template>
     </PageHeader>
+
+    <section class="page-card picker-card">
+      <div class="picker-head">
+        <div>
+          <h3>可追溯患者</h3>
+          <p>{{ scopeLabel || '按当前角色加载' }} · 共 {{ patients.length }} 位患者，点击卡片查看闭环链路</p>
+        </div>
+      </div>
+      <div v-loading="patientsLoading" class="patient-picker">
+        <button
+          v-for="item in patients"
+          :key="item.admission_no"
+          type="button"
+          class="patient-chip"
+          :class="{ active: item.admission_no === admissionNo }"
+          @click="selectPatient(item)"
+        >
+          <span class="chip-name">{{ item.patient_name }}</span>
+          <span class="chip-meta">{{ item.admission_no }} · {{ item.department }} {{ item.bed_no || '' }}</span>
+          <span class="chip-foot">{{ item.blood_type }}{{ item.rh }} · 申请 {{ item.request_count }} 张</span>
+        </button>
+        <div v-if="!patientsLoading && !patients.length" class="chip-empty">
+          当前角色暂无可追溯的住院患者
+        </div>
+      </div>
+    </section>
 
     <section class="page-card search-card">
       <div class="search-box">
@@ -76,7 +151,7 @@ onMounted(loadTrace)
         </div>
         <el-button type="primary" size="large" :loading="loading" @click="loadTrace">查询追溯链路</el-button>
       </div>
-      <p>追溯数据只读展示，包含不相容配血拦截记录；红色节点为配血不相容，橙色节点为输血不良反应。</p>
+      <p>{{ scopeHint }}；追溯数据只读展示，红色节点为配血不相容，橙色节点为输血不良反应。</p>
     </section>
 
     <div v-loading="loading" class="trace-content">
@@ -140,20 +215,93 @@ onMounted(loadTrace)
         </section>
       </template>
 
-      <section v-else-if="searched && result" class="page-card empty-state">
-        <el-empty :image-size="110" description="未找到该住院号的输血记录">
-        <el-button type="primary" @click="useDemo('ZY20240512005')">查看示例追溯链路</el-button>
+      <section v-else-if="searched" class="page-card empty-state">
+        <el-empty :image-size="110" :description="errorTip || '未找到该住院号的输血记录'">
+          <el-button v-if="patients.length" type="primary" @click="selectPatient(patients[0])">查看范围内最近患者</el-button>
         </el-empty>
       </section>
 
       <section v-else class="page-card empty-state">
-      <el-empty :image-size="110" description="输入住院号开始追溯，或点击右上角示例住院号" />
+      <el-empty :image-size="110" description="从上方可追溯患者中选择，或输入住院号开始追溯" />
       </section>
     </div>
   </div>
 </template>
 
 <style scoped>
+.picker-card {
+  margin-bottom: 16px;
+}
+
+.picker-head h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.picker-head p {
+  margin: 4px 0 0;
+  color: var(--bb-text-secondary);
+  font-size: 11px;
+}
+
+.patient-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  min-height: 66px;
+  margin-top: 12px;
+}
+
+.patient-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: var(--bb-card);
+  border: 1px solid var(--bb-border);
+  border-left: 3px solid var(--bb-primary);
+  border-radius: 5px;
+  transition: background 150ms, box-shadow 150ms, transform 150ms;
+}
+
+.patient-chip:hover {
+  background: var(--bb-hover);
+  box-shadow: var(--bb-shadow);
+  transform: translateY(-1px);
+}
+
+.patient-chip.active {
+  background: #eff6ff;
+  border-color: var(--bb-primary);
+  box-shadow: 0 0 0 1px var(--bb-primary) inset;
+}
+
+.chip-name {
+  color: var(--bb-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chip-meta,
+.chip-foot {
+  color: var(--bb-text-secondary);
+  font-size: 11px;
+}
+
+.chip-empty {
+  grid-column: 1 / -1;
+  padding: 14px;
+  color: var(--bb-text-secondary);
+  font-size: 12px;
+  text-align: center;
+  background: var(--bb-hover);
+  border: 1px dashed var(--bb-border);
+  border-radius: 5px;
+}
+
 .search-card {
   margin-bottom: 16px;
 }

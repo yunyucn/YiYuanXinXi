@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
             </button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="trace">我的输血追溯</el-dropdown-item>
+                <el-dropdown-item v-if="auth.canAccess('trace')" command="trace">全周期追溯</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
