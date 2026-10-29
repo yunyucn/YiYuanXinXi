@@ -98,6 +98,7 @@ export const systemApi = {
   roles: () => request.get('/system/roles'),
   users: () => request.get('/system/users'),
   logs: (params) => request.get('/system/logs', { params }),
+  logDetail: (id) => request.get(`/system/logs/${id}`),
   createUser: (data) => request.post('/system/users', data),
   updateUser: (id, data) => request.put(`/system/users/${id}`, data),
   createDepartment: (data) => request.post('/system/departments', data),

@@ -548,10 +548,20 @@ class OperationLog(db.Model):
     user = db.relationship("User")
 
     def to_dict(self):
-        """返回审计日志 JSON。"""
+        """返回审计日志 JSON，并展开操作人姓名、角色与科室。
+
+        Notes:
+            日志以 ``user_id`` 关联用户表，列表展示时以真实姓名为主、
+            ``username`` 作为账号辅助信息；用户被删除时回退显示账号。
+        """
+        user = self.user
         return {
             "id": self.id,
+            "user_id": self.user_id,
             "username": self.username,
+            "real_name": (user.real_name if user else None) or self.username,
+            "role_name": user.role.name if user and user.role else None,
+            "department": user.department.name if user and user.department else None,
             "action": self.action,
             "target_type": self.target_type,
             "target_id": self.target_id,

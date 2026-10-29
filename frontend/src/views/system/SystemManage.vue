@@ -6,7 +6,7 @@
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Edit, Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { Edit, Plus, Refresh, Search, View } from '@element-plus/icons-vue'
 import { systemApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
@@ -22,6 +22,10 @@ const logTotal = ref(0)
 const logPage = ref(1)
 const logPageSize = ref(20)
 const logKeyword = ref('')
+const logUserId = ref(null)
+const logVisible = ref(false)
+const logLoading = ref(false)
+const logDetail = ref(null)
 
 const userVisible = ref(false)
 const userSaving = ref(false)
@@ -83,9 +87,14 @@ async function loadBase() {
   }
 }
 
-/** 按关键字分页加载操作审计日志。 */
+/** 按关键字 / 操作人分页加载操作审计日志。 */
 async function loadLogs() {
-  const data = await systemApi.logs({ keyword: logKeyword.value || undefined, page: logPage.value, page_size: logPageSize.value })
+  const data = await systemApi.logs({
+    keyword: logKeyword.value || undefined,
+    user_id: logUserId.value || undefined,
+    page: logPage.value,
+    page_size: logPageSize.value,
+  })
   logs.value = data.items
   logTotal.value = data.total
 }
@@ -286,6 +295,32 @@ function searchLogs() {
   loadLogs()
 }
 
+/** 重置日志筛选条件（关键字 + 操作人）。 */
+function resetLogs() {
+  logKeyword.value = ''
+  logUserId.value = null
+  searchLogs()
+}
+
+/**
+ * 打开单条审计日志详情。
+ *
+ * 先用列表行数据占位渲染，再按日志 ID 拉取带操作人完整资料的详情，
+ * 请求失败时保留占位内容并提示，避免弹窗空白。
+ */
+async function openLogDetail(row) {
+  logDetail.value = row
+  logVisible.value = true
+  logLoading.value = true
+  try {
+    logDetail.value = await systemApi.logDetail(row.id)
+  } catch (error) {
+    ElMessage.error('日志详情加载失败')
+  } finally {
+    logLoading.value = false
+  }
+}
+
 // 首次进入日志页签时按需加载审计日志。
 watch(activeTab, (value) => {
   if (value === 'logs' && !logs.value.length) loadLogs()
@@ -313,6 +348,7 @@ onMounted(async () => {
             <el-button type="primary" :icon="Plus" @click="openUser()">新增用户</el-button>
           </div>
           <el-table v-loading="loading" :data="users" border>
+            <el-table-column prop="id" label="用户 ID" width="90" />
             <el-table-column prop="username" label="用户名" width="110" />
             <el-table-column prop="real_name" label="姓名" width="100" />
             <el-table-column label="角色" width="120">
@@ -397,19 +433,39 @@ onMounted(async () => {
 
         <el-tab-pane label="操作日志" name="logs">
           <div class="filter-bar">
-            <el-input v-model="logKeyword" :prefix-icon="Search" clearable placeholder="用户名 / 操作 / 详情" style="width: 280px" @keyup.enter="searchLogs" />
+            <el-input v-model="logKeyword" :prefix-icon="Search" clearable placeholder="姓名 / 账号 / 操作 / 详情" style="width: 280px" @keyup.enter="searchLogs" />
+            <el-select v-model="logUserId" class="log-user-filter" clearable filterable placeholder="按操作人筛选" @change="searchLogs">
+              <el-option v-for="user in users" :key="user.id" :label="`${user.real_name}（ID ${user.id} / ${user.username}）`" :value="user.id" />
+            </el-select>
             <el-button type="primary" :icon="Search" @click="searchLogs">查询</el-button>
-            <el-button @click="logKeyword = ''; searchLogs()">重置</el-button>
+            <el-button @click="resetLogs">重置</el-button>
           </div>
           <el-table :data="logs" border>
             <el-table-column prop="created_at" label="操作时间" width="170">
               <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
             </el-table-column>
-            <el-table-column prop="username" label="操作人" width="110" />
-            <el-table-column prop="action" label="操作" width="150" />
+            <el-table-column label="操作人" min-width="170">
+              <template #default="{ row }">
+                <div class="operator-cell">
+                  <span class="operator-name">{{ row.real_name || row.username }}</span>
+                  <span class="operator-meta">ID {{ row.user_id ?? '-' }} · {{ row.username }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="角色 / 科室" width="150">
+              <template #default="{ row }">
+                <span class="operator-meta">{{ row.role_name || '-' }} / {{ row.department || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="action" label="业务操作" width="150" />
             <el-table-column prop="target_type" label="对象类型" width="110" />
-            <el-table-column prop="target_id" label="对象标识" width="150" show-overflow-tooltip />
-            <el-table-column prop="detail" label="操作详情" min-width="300" show-overflow-tooltip />
+            <el-table-column prop="target_id" label="对象标识" width="140" show-overflow-tooltip />
+            <el-table-column prop="detail" label="操作详情" min-width="240" show-overflow-tooltip />
+            <el-table-column label="操作" width="90" fixed="right">
+              <template #default="{ row }">
+                <el-button link type="primary" :icon="View" @click="openLogDetail(row)">详情</el-button>
+              </template>
+            </el-table-column>
           </el-table>
           <div class="table-footer">
             <el-pagination v-model:current-page="logPage" v-model:page-size="logPageSize" :total="logTotal" :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next" @current-change="loadLogs" @size-change="loadLogs" />
@@ -417,6 +473,33 @@ onMounted(async () => {
         </el-tab-pane>
       </el-tabs>
     </section>
+
+    <el-dialog v-model="logVisible" title="审计日志详情" width="760px" destroy-on-close>
+      <div v-loading="logLoading" class="log-detail">
+        <el-descriptions v-if="logDetail" :column="2" border size="small">
+          <el-descriptions-item label="日志编号">{{ logDetail.id }}</el-descriptions-item>
+          <el-descriptions-item label="操作时间">{{ formatDateTime(logDetail.created_at) }}</el-descriptions-item>
+          <el-descriptions-item label="操作人姓名">{{ logDetail.real_name || logDetail.username }}</el-descriptions-item>
+          <el-descriptions-item label="登录账号">{{ logDetail.username }}</el-descriptions-item>
+          <el-descriptions-item label="用户 ID">{{ logDetail.user_id ?? '-' }}</el-descriptions-item>
+          <el-descriptions-item label="用户状态">
+            <el-tag v-if="logDetail.operator" :type="logDetail.operator.is_active ? 'success' : 'info'" size="small">
+              {{ logDetail.operator.is_active ? '启用' : '停用' }}
+            </el-tag>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="角色">{{ logDetail.role_name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="所属科室">{{ logDetail.department || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="联系电话">{{ logDetail.operator?.phone || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="业务操作">{{ logDetail.action }}</el-descriptions-item>
+          <el-descriptions-item label="对象类型">{{ logDetail.target_type || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="对象标识">{{ logDetail.target_id || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="操作详情" :span="2">
+            <div class="log-detail-text">{{ logDetail.detail || '—' }}</div>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-dialog>
 
     <el-dialog v-model="userVisible" :title="isEditingUser ? '编辑用户' : '新增用户'" width="560px" destroy-on-close>
       <el-form label-position="top">
@@ -484,6 +567,37 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.log-user-filter {
+  width: 260px;
+}
+
+.operator-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.35;
+}
+
+.operator-name {
+  font-weight: 600;
+  color: var(--bb-text);
+}
+
+.operator-meta {
+  font-size: 11px;
+  color: var(--bb-text-secondary);
+}
+
+.log-detail {
+  min-height: 160px;
+}
+
+.log-detail-text {
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
 .tab-toolbar {
   display: flex;
   align-items: center;

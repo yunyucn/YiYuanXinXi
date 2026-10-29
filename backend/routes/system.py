@@ -6,6 +6,7 @@
 
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
+from sqlalchemy.orm import joinedload
 
 from models import BloodProductDict, Department, Fridge, OperationLog, Role, User, db
 from utils.auth import add_operation_log, roles_required
@@ -227,14 +228,59 @@ def update_fridge(fridge_id):
 @bp.get("/system/logs")
 @roles_required()
 def list_logs():
-    """分页查询操作审计日志。"""
+    """分页查询操作审计日志。
+
+    Query Args:
+        page: 页码，默认 1。
+        page_size: 每页条数，最大 100。
+        keyword: 模糊匹配操作人姓名、账号、业务操作、对象标识或详情。
+        user_id: 按操作人用户 ID 精确过滤。
+
+    Returns:
+        dict: 分页数据，每条记录附带 ``real_name``/``role_name``/``department``。
+    """
     page = max(request.args.get("page", 1, type=int), 1)
     page_size = min(max(request.args.get("page_size", 20, type=int), 1), 100)
     keyword = request.args.get("keyword", "").strip()
-    query = OperationLog.query
+    user_id = request.args.get("user_id", type=int)
+    query = OperationLog.query.options(
+        joinedload(OperationLog.user).joinedload(User.role),
+        joinedload(OperationLog.user).joinedload(User.department),
+    )
+    if user_id:
+        query = query.filter(OperationLog.user_id == user_id)
     if keyword:
-        query = query.filter(
-            db.or_(OperationLog.username.contains(keyword), OperationLog.action.contains(keyword), OperationLog.detail.contains(keyword))
+        like = f"%{keyword}%"
+        query = query.outerjoin(User, OperationLog.user_id == User.id).filter(
+            db.or_(
+                OperationLog.username.like(like),
+                User.real_name.like(like),
+                OperationLog.action.like(like),
+                OperationLog.target_id.like(like),
+                OperationLog.detail.like(like),
+            )
         )
     pagination = query.order_by(OperationLog.created_at.desc()).paginate(page=page, per_page=page_size, error_out=False)
     return ok(page_data([item.to_dict() for item in pagination.items], pagination.total, page, page_size))
+
+
+@bp.get("/system/logs/<int:log_id>")
+@roles_required()
+def get_log(log_id):
+    """查询单条审计日志详情。
+
+    Args:
+        log_id: 审计日志主键。
+
+    Returns:
+        dict: 日志字段 + ``operator`` 操作人完整资料（含联系电话、启用状态）。
+
+    Notes:
+        操作人账号被删除时 ``operator`` 返回 ``None``，前端按快照字段展示。
+    """
+    item = db.session.get(OperationLog, log_id)
+    if not item:
+        return fail("审计日志不存在", 404)
+    data = item.to_dict()
+    data["operator"] = item.user.to_dict() if item.user else None
+    return ok(data)
