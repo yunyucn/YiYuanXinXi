@@ -3,7 +3,7 @@
  * 患者全周期追溯：按住院号聚合申请、配血、发血、执行和不良反应事件。
  *
  * 可追溯范围由后端按角色收敛：输血科/主任为全院，医生为本人开具申请的患者，
- * 护士为本人执行或本科室患者。页面先加载“可追溯患者”清单，再按住院号
+ * 护士为本人经手（执行/领血/上报不良反应）的患者。页面先加载“可追溯患者”清单，再按住院号
  * 展示闭环时间轴，避免不同角色进入后都看到同一份数据。
  */
 import { computed, onMounted, ref } from 'vue'
@@ -38,7 +38,7 @@ const eventMeta = {
 const scopeHint = computed(() => {
   const scope = result.value?.scope || scopeCode.value
   if (scope === 'doctor') return '仅可查看本人开具申请的患者的输血记录，跨范围查询会被拒绝'
-  if (scope === 'nurse') return '仅可查看本人执行或本科室患者的输血记录，跨范围查询会被拒绝'
+  if (scope === 'nurse') return '仅可查看本人执行、领血或上报不良反应的患者的输血记录，跨范围查询会被拒绝'
   if (scope === 'all') return '可查询全院患者的输血记录'
   return '请从上方可追溯患者中选择，或输入范围内的住院号'
 })

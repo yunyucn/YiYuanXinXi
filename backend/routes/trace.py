@@ -2,7 +2,7 @@
 
 追溯属于敏感数据，接口按角色收敛可见范围：
 输血科、主任与管理员可追溯全院患者；医生只能追溯本人开具申请的住院患者；
-护士只能追溯本人执行/领血以及本科室提交申请的住院患者。
+护士只能追溯本人执行、领血或上报过不良反应的住院患者。
 跨范围查询统一返回 403，避免任意住院号被任意角色遍历。
 """
 
@@ -41,7 +41,7 @@ def _scope_requests(user):
         - 输血科技师、主任、管理员：全院患者。
         - 医生：仅 ``doctor_id`` 为本人 的申请单。
         - 护士：本人执行、领血（``pickup_nurse`` 与姓名一致）或上报过不良反应的
-          申请单，以及本科室提交的申请单。
+          申请单，即“本人经手”的患者；不按科室放行，避免同科室其他患者被顺带看到。
         - 其余角色返回空结果，避免后续新增角色默认获得全院视角。
     """
     role = user.role.code if user and user.role else ""
@@ -63,9 +63,7 @@ def _scope_requests(user):
             )
         )
         condition = db.or_(TransfusionRequest.id.in_(handled), TransfusionRequest.id.in_(reported))
-        if user.department is not None:
-            condition = db.or_(condition, TransfusionRequest.department == user.department.name)
-        return TransfusionRequest.query.filter(condition), "本人执行或本科室住院患者", "nurse"
+        return TransfusionRequest.query.filter(condition), "本人经手的住院患者", "nurse"
     return TransfusionRequest.query.filter(TransfusionRequest.id < 0), "无可追溯患者", "none"
 
 
