@@ -1,3 +1,9 @@
+"""发血与输血执行确认接口。
+
+发血前强制完成四项核对，并验证申请状态、有效配血记录、血袋锁定状态和效期；
+护士确认执行后申请单流转为“已完成”。
+"""
+
 from datetime import date, datetime
 
 from flask import Blueprint, request
@@ -17,12 +23,14 @@ REQUIRED_CHECKS = (
 
 
 def generate_record_no():
+    """生成基于当前时间的唯一发血记录号。"""
     return f"SX{datetime.now():%Y%m%d%H%M%S%f}"[:26]
 
 
 @bp.get("/issues/pending")
 @roles_required("tech")
 def pending_issues():
+    """返回已备血待发血申请及对应有效血袋。"""
     requests = (
         TransfusionRequest.query.filter(TransfusionRequest.status == "已备血")
         .order_by(TransfusionRequest.requested_at.asc())
@@ -41,6 +49,7 @@ def pending_issues():
 @bp.get("/issues")
 @roles_required("tech", "nurse")
 def list_issues():
+    """分页查询发血记录，支持执行状态、住院号和关键字筛选。"""
     query = IssueRecord.query
     execution_status = request.args.get("execution_status")
     admission_no = request.args.get("admission_no", "").strip()
@@ -66,6 +75,7 @@ def list_issues():
 @bp.get("/issues/<int:issue_id>")
 @roles_required("tech", "nurse")
 def get_issue(issue_id):
+    """查询发血记录详情、关联不良反应和有效配血记录。"""
     issue = db.session.get(IssueRecord, issue_id)
     if not issue:
         return fail("发血记录不存在", 404)
@@ -78,6 +88,12 @@ def get_issue(issue_id):
 @bp.post("/issues")
 @roles_required("tech")
 def create_issue():
+    """完成发血核对并生成发血记录。
+
+    Notes:
+        四项核对必须全部提交；成功后血袋改为“已发血”、申请单改为“已发血”，
+        发血记录初始执行状态为“待执行”。
+    """
     payload = request.get_json(silent=True) or {}
     request_id = payload.get("request_id")
     pickup_nurse = str(payload.get("pickup_nurse", "")).strip()
@@ -134,6 +150,11 @@ def create_issue():
 @bp.post("/issues/<int:issue_id>/execute")
 @roles_required("nurse")
 def execute_issue(issue_id):
+    """护士确认输血执行完成。
+
+    Notes:
+        仅“待执行”记录可确认；确认后记录执行人、执行时间，并同步申请单状态。
+    """
     issue = db.session.get(IssueRecord, issue_id)
     if not issue:
         return fail("发血记录不存在", 404)

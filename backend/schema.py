@@ -4,12 +4,16 @@ SQLite 不会像 MySQL/PostgreSQL 一样保存原生表注释和列注释，因�
 在 SQLAlchemy 元数据上设置 comment，并把同一份说明同步到数据库内的
 schema_comment 字典表。图形化工具无法显示 SQLite 原生注释时，可直接
 查询 schema_comment 获取完整数据库说明。
+
+本模块的注释配置同时写入 SQLAlchemy 的 ``comment`` 元数据与数据库内的
+``schema_comment`` 字典表，保证图形化工具和数据库字典都能查到中文说明。
 """
 
 from models import SchemaComment, db
 
 
 def _table(comment, **columns):
+    """构造一张表的注释配置。"""
     return {"comment": comment, "columns": columns}
 
 

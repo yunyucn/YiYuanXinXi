@@ -1,4 +1,10 @@
 <script setup>
+/**
+ * 表格操作列组件。
+ *
+ * 将操作按钮收敛到同一行，超出 `max` 时自动折叠到“更多”菜单，
+ * 避免不同页面因按钮数量导致布局错位。
+ */
 import { computed } from 'vue'
 import { MoreFilled } from '@element-plus/icons-vue'
 
@@ -7,10 +13,14 @@ const props = defineProps({
   max: { type: Number, default: 3 },
 })
 
+/** 过滤掉当前角色不可见的操作。 */
 const available = computed(() => props.actions.filter((action) => !action.hidden))
+/** 可在一行内直接展示的操作。 */
 const inlineActions = computed(() => (available.value.length <= props.max ? available.value : available.value.slice(0, props.max - 1)))
+/** 超出展示上限、收进下拉菜单的操作。 */
 const overflowActions = computed(() => (available.value.length <= props.max ? [] : available.value.slice(props.max - 1)))
 
+/** 执行操作前统一拦截禁用和加载中状态。 */
 function run(action) {
   if (action.disabled || action.loading) return
   action.onClick?.()

@@ -1,3 +1,8 @@
+"""预警中心接口。
+
+预警查询与处理仅对技师、主任和管理员开放，前端菜单与后端权限保持一致。
+"""
+
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request
@@ -13,6 +18,7 @@ LEVEL_ORDER = {"严重": 0, "警告": 1, "提示": 2}
 
 
 def enrich_alert(alert):
+    """补充预警关联对象名称和前端跳转链接。"""
     data = alert.to_dict()
     label = None
     link = None
@@ -36,6 +42,7 @@ def enrich_alert(alert):
 @bp.get("/alerts")
 @roles_required("tech", "director")
 def list_alerts():
+    """分页查询预警，并按未处理、级别、时间排序。"""
     query = Alert.query
     alert_type = request.args.get("type")
     level = request.args.get("level")
@@ -59,6 +66,7 @@ def list_alerts():
 @bp.get("/alerts/summary")
 @roles_required("tech", "director")
 def alert_summary():
+    """返回未处理预警总数、红色预警数和最近五条摘要。"""
     unhandled = Alert.query.filter_by(is_handled=False).all()
     red_count = sum(1 for item in unhandled if item.level in ("警告", "严重"))
     unhandled.sort(key=lambda item: (LEVEL_ORDER.get(item.level, 9), -item.id))
@@ -69,6 +77,7 @@ def alert_summary():
 @bp.get("/scan-logs")
 @roles_required("tech", "director")
 def scan_logs():
+    """返回最近扫描记录及下一次计划扫描时间。"""
     logs = ScanLog.query.order_by(ScanLog.scanned_at.desc()).limit(10).all()
     interval = 10
     next_scan = None
@@ -88,6 +97,7 @@ def scan_logs():
 @bp.post("/alerts/refresh")
 @roles_required("tech", "director")
 def refresh_alerts():
+    """手动触发一次预警扫描。"""
     result = scan_alerts("手动")
     return ok(result, "扫描完成")
 
@@ -95,6 +105,7 @@ def refresh_alerts():
 @bp.post("/alerts/<int:alert_id>/handle")
 @roles_required("tech", "director")
 def handle_alert(alert_id):
+    """记录处理人、处理时间和备注，将预警标记为已处理。"""
     alert = db.session.get(Alert, alert_id)
     if not alert:
         return fail("预警不存在", 404)

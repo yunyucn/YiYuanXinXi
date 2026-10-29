@@ -1,3 +1,5 @@
+"""首页统计看板接口。"""
+
 from datetime import date, datetime, time, timedelta
 
 from flask import Blueprint
@@ -17,6 +19,11 @@ LEVEL_ORDER = {"严重": 0, "警告": 1, "提示": 2}
 @bp.get("/dashboard/summary")
 @jwt_required()
 def summary():
+    """汇总库存、待配血、临期、发血和近七日趋势。
+
+    Notes:
+        医生仅统计本人提交的待处理申请；预警摘要只对管理员、技师和主任可见。
+    """
     user = current_user()
     role_code = user.role.code if user and user.role else None
     today = date.today()

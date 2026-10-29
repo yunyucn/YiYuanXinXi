@@ -1,3 +1,8 @@
+"""血袋报废申请与审批接口。
+
+技师负责提交报废申请，主任负责批准或驳回；申请与审批均写入操作审计日志。
+"""
+
 from datetime import date, datetime
 
 from flask import Blueprint, request
@@ -14,6 +19,7 @@ bp = Blueprint("scrap", __name__)
 @bp.get("/scraps")
 @roles_required("tech", "director")
 def list_scraps():
+    """分页查询报废记录，支持审批状态和储血号/原因关键字筛选。"""
     query = ScrapRecord.query
     status = request.args.get("approval_status")
     keyword = request.args.get("keyword", "").strip()
@@ -30,6 +36,11 @@ def list_scraps():
 
 
 def _new_scrap(bag, user, reason):
+    """校验血袋是否可报废并构造待审批记录。
+
+    Returns:
+        tuple[ScrapRecord | None, str | None]: 报废记录或不可报废原因。
+    """
     if bag.status in ("已发血", "已报废"):
         return None, f"血袋 {bag.bag_no} 状态为 {bag.status}，不能申请报废"
     if bag.status == "备血锁定":
@@ -50,6 +61,7 @@ def _new_scrap(bag, user, reason):
 @bp.post("/scraps")
 @roles_required("tech")
 def create_scrap():
+    """提交一袋或多袋报废申请，任一血袋校验失败则整批回滚。"""
     payload = request.get_json(silent=True) or {}
     reason = str(payload.get("reason", "")).strip()
     if not reason:
@@ -79,6 +91,7 @@ def create_scrap():
 @bp.post("/scraps/expired-batch")
 @roles_required("tech")
 def batch_expired():
+    """为当前“已过期”血袋批量创建报废申请，已存在待审批记录时自动跳过。"""
     user = current_user()
     expired = BloodBag.query.filter(BloodBag.status == "已过期").all()
     created = 0
@@ -92,6 +105,12 @@ def batch_expired():
 
 
 def _review(record_id, approved):
+    """执行报废审批公共流程。
+
+    Args:
+        record_id: 报废记录主键。
+        approved: ``True`` 表示批准并锁定血袋，``False`` 表示驳回。
+    """
     record = db.session.get(ScrapRecord, record_id)
     if not record:
         return fail("报废记录不存在", 404)
@@ -119,10 +138,12 @@ def _review(record_id, approved):
 @bp.post("/scraps/<int:record_id>/approve")
 @roles_required("director")
 def approve_scrap(record_id):
+    """主任批准报废。"""
     return _review(record_id, True)
 
 
 @bp.post("/scraps/<int:record_id>/reject")
 @roles_required("director")
 def reject_scrap(record_id):
+    """主任驳回报废。"""
     return _review(record_id, False)

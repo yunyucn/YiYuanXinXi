@@ -1,4 +1,5 @@
 <script setup>
+/** 配血工作台：选择申请、筛选相容血袋、执行配血或取消配血。 */
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
@@ -21,6 +22,7 @@ const tableRef = ref(null)
 
 const methods = ['盐水法', '凝聚胺', '微柱凝胶']
 
+/** 按申请单号、患者、住院号或科室搜索待配血队列。 */
 const filteredPending = computed(() => {
   const key = keyword.value.trim().toLowerCase()
   if (!key) return pending.value
@@ -31,35 +33,47 @@ const filteredPending = computed(() => {
   )
 })
 
+/** 按“仅看相容”条件过滤推荐血袋。 */
 const filteredBags = computed(() =>
   recommendations.value.filter((bag) => !onlyCompatible.value || bag.compatibility?.level !== 'fail'),
 )
 
+/** 已选血袋数量合计。 */
 const selectedTotal = computed(() => selectedBags.value.reduce((sum, bag) => sum + Number(bag.quantity || 0), 0))
+/** 最近勾选的血袋，用于展示实时相容性。 */
 const activeBag = computed(() => selectedBags.value[selectedBags.value.length - 1])
+/** 当前血袋相容性；未选择时展示操作提示。 */
 const compatibility = computed(() => activeBag.value?.compatibility || { level: 'ok', reason: '勾选血袋后将实时展示相容性判定' })
+/** 已选总量是否满足申请量。 */
 const enoughQuantity = computed(() => Boolean(selected.value) && selectedTotal.value + 1e-6 >= Number(selected.value.quantity || 0))
+/** 是否允许提交配血。 */
 const canSubmit = computed(() => Boolean(selected.value && selectedBags.value.length && enoughQuantity.value && !submitting.value))
+/** 当前有效的配血记录。 */
 const activeMatches = computed(() => history.value.filter((item) => item.is_active))
 
+/** 按等待时长返回警示样式。 */
 function waitingClass(minutes) {
   if (minutes >= 120) return 'critical'
   if (minutes >= 30) return 'warning'
   return ''
 }
 
+/** 不相容血袋使用风险行样式。 */
 function rowClass({ row }) {
   return row.compatibility?.level === 'fail' ? 'incompatible-row' : ''
 }
 
+/** 不相容血袋禁止勾选。 */
 function isSelectable(row) {
   return row.compatibility?.level !== 'fail'
 }
 
+/** 相容级别到标签颜色的映射。 */
 function compatTag(level) {
   return { ok: 'success', warn: 'warning', fail: 'danger' }[level] || 'info'
 }
 
+/** 加载待配血队列，并保持当前申请或自动选中第一条。 */
 async function loadPending() {
   loading.value = true
   try {
@@ -81,6 +95,7 @@ async function loadPending() {
   }
 }
 
+/** 打开申请并推进到配血中，同时加载推荐血袋与历史配血。 */
 async function openRequest(item) {
   if (!item) return
   selected.value = item
@@ -107,15 +122,18 @@ async function openRequest(item) {
   }
 }
 
+/** 同步表格勾选结果。 */
 function handleSelection(rows) {
   selectedBags.value = rows
 }
 
+/** 清空表格勾选和本地选择。 */
 function clearSelection() {
   tableRef.value?.clearSelection()
   selectedBags.value = []
 }
 
+/** 提交配血；后端再次校验相容性并锁定血袋。 */
 async function submitMatch() {
   if (!canSubmit.value) {
     if (!enoughQuantity.value) ElMessage.warning(`所选血袋总量不足申请量 ${selected.value?.quantity}${selected.value?.quantity_unit || ''}`)
@@ -139,6 +157,7 @@ async function submitMatch() {
   }
 }
 
+/** 取消当前配血并释放已锁定血袋。 */
 async function cancelMatch() {
   if (!selected.value) return
   await ElMessageBox.confirm('取消配血后，已锁定血袋将恢复为在库状态。确认继续？', '取消配血', {

@@ -1,3 +1,5 @@
+"""主任端统计报表与 CSV 导出接口。"""
+
 import csv
 import io
 from datetime import date, datetime, time, timedelta
@@ -14,12 +16,14 @@ bp = Blueprint("report", __name__)
 
 
 def _parse_date(value, fallback):
+    """解析报表日期，缺省时返回回退值。"""
     if not value:
         return fallback
     return datetime.strptime(str(value), "%Y-%m-%d").date()
 
 
 def _range():
+    """读取查询区间，默认最近 30 天。"""
     today = date.today()
     start = _parse_date(request.args.get("start_date"), today - timedelta(days=29))
     end = _parse_date(request.args.get("end_date"), today)
@@ -27,12 +31,14 @@ def _range():
 
 
 def _bag_quantity(ids):
+    """汇总指定血袋的数量。"""
     if not ids:
         return 0
     return db.session.query(func.coalesce(func.sum(BloodBag.quantity), 0)).filter(BloodBag.id.in_(ids)).scalar() or 0
 
 
 def _daily_rows(start, end):
+    """生成按日入库、出库、报废和期末库存明细。"""
     rows = []
     day = start
     while day <= end:
@@ -79,6 +85,7 @@ def _daily_rows(start, end):
 @bp.get("/reports/overview")
 @roles_required("director")
 def overview():
+    """返回报表卡片、每日趋势、科室用量及分布数据。"""
     start, end = _range()
     if start > end:
         return fail("开始日期不能晚于结束日期")
@@ -139,6 +146,7 @@ def overview():
 @bp.get("/reports/export")
 @roles_required("director")
 def export_csv():
+    """将指定日期区间报表导出为带 UTF-8 BOM 的 CSV。"""
     start, end = _range()
     if start > end:
         return fail("开始日期不能晚于结束日期")

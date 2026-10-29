@@ -1,3 +1,9 @@
+"""Flask 应用工厂。
+
+该模块负责装配配置、数据库、JWT、跨域、蓝图、全局异常处理和预警调度器。
+业务路由只负责参数校验与流程编排，应用级横切逻辑集中在这里。
+"""
+
 from datetime import datetime
 
 from flask import Flask, jsonify
@@ -13,6 +19,15 @@ jwt = JWTManager()
 
 
 def create_app(config_overrides=None, testing=False):
+    """创建输血管理系统 Flask 应用。
+
+    Args:
+        config_overrides: 可选的配置覆盖字典，测试和验收脚本借此切换到临时数据库。
+        testing: 是否为测试模式；测试模式会关闭后台预警调度器。
+
+    Returns:
+        Flask: 已完成蓝图注册、数据表初始化和异常处理配置的应用实例。
+    """
     app = Flask(__name__)
     app.config.from_object(Config)
     if config_overrides:

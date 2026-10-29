@@ -1,4 +1,5 @@
 <script setup>
+/** 登录页：账号密码登录、角色快捷填充与登录后的权限感知跳转。 */
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -28,6 +29,7 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
+/** 触发登录卡片抖动反馈。 */
 function shake() {
   shaking.value = false
   requestAnimationFrame(() => {
@@ -38,6 +40,7 @@ function shake() {
   })
 }
 
+/** 校验表单、创建会话并跳转原目标页。 */
 async function submit() {
   try {
     await formRef.value.validate()
@@ -59,6 +62,7 @@ async function submit() {
   }
 }
 
+/** 快捷填入演示账号，统一使用演示密码。 */
 function useAccount(username) {
   form.username = username
   form.password = '123456'

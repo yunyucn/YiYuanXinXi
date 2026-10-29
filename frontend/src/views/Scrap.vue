@@ -1,4 +1,5 @@
 <script setup>
+/** 报废管理：技师提交申请，主任审批，批准后联动血袋状态。 */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Check, Delete, Plus, Refresh, Search } from '@element-plus/icons-vue'
@@ -21,19 +22,26 @@ const selectedBags = ref([])
 const scrapReason = ref('')
 const batchLoading = ref(false)
 
+/** 当前角色是否可提交报废申请。 */
 const canApply = computed(() => auth.canAccess('scrapApply'))
+/** 当前角色是否可审批报废。 */
 const canApprove = computed(() => auth.canAccess('scrapApprove'))
+/** 当前页待审批数量。 */
 const pendingOnPage = computed(() => items.value.filter((item) => item.approval_status === '待审批').length)
+/** 当前页已批准数量。 */
 const approvedOnPage = computed(() => items.value.filter((item) => item.approval_status === '已批准').length)
 
+/** 报废审批状态到标签颜色的映射。 */
 function statusTag(status) {
   return { 待审批: 'warning', 已批准: 'success', 已驳回: 'danger' }[status] || 'info'
 }
 
+/** 备血锁定、已发血和已报废血袋不可申请报废。 */
 function isSelectable(row) {
   return !['备血锁定', '已发血', '已报废'].includes(row.status)
 }
 
+/** 按审批状态和关键字加载报废记录。 */
 async function loadItems() {
   loading.value = true
   try {
@@ -50,6 +58,7 @@ async function loadItems() {
   }
 }
 
+/** 加载可选择的血袋列表。 */
 async function loadBags() {
   bagLoading.value = true
   try {
@@ -60,11 +69,13 @@ async function loadBags() {
   }
 }
 
+/** 筛选后回到第一页。 */
 function search() {
   page.value = 1
   loadItems()
 }
 
+/** 清空报废记录筛选条件。 */
 function resetFilters() {
   filters.approval_status = ''
   filters.keyword = ''
@@ -72,6 +83,7 @@ function resetFilters() {
   loadItems()
 }
 
+/** 打开新建报废申请弹窗并加载血袋。 */
 async function openCreate() {
   createVisible.value = true
   selectedBags.value = []
@@ -79,6 +91,7 @@ async function openCreate() {
   await loadBags()
 }
 
+/** 校验并提交报废申请。 */
 async function submitCreate() {
   if (!selectedBags.value.length) {
     ElMessage.warning('请选择需要报废的血袋')
@@ -99,6 +112,7 @@ async function submitCreate() {
   }
 }
 
+/** 为过期且无待审批记录的血袋批量提交报废申请。 */
 async function batchExpired() {
   await ElMessageBox.confirm('系统将为所有“已过期”且无待审批记录的血袋批量提交报废申请。确认继续？', '批量过期报废', {
     type: 'warning',
@@ -114,6 +128,7 @@ async function batchExpired() {
   }
 }
 
+/** 主任批准或驳回报废申请。 */
 async function review(row, approved) {
   const action = approved ? '批准' : '驳回'
   let note = ''
@@ -139,6 +154,7 @@ async function review(row, approved) {
   await loadItems()
 }
 
+/** 生成报废审批操作列。 */
 function scrapActions(row) {
   return [
     { label: '批准', type: 'success', icon: Check, emphasis: true, onClick: () => review(row, true) },

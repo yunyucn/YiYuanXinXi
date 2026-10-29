@@ -1,3 +1,9 @@
+"""SQLAlchemy 数据模型。
+
+模型覆盖角色权限、血液库存、输血申请、配血、发血、不良反应、报废、预警、
+扫描记录和操作审计。各模型的 ``to_dict`` 负责生成前端直接消费的 JSON 字段。
+"""
+
 from datetime import date, datetime
 
 from flask_sqlalchemy import SQLAlchemy
@@ -8,6 +14,7 @@ db = SQLAlchemy()
 
 
 def iso(value):
+    """将日期时间转换为前端可读的 ISO 字符串。"""
     if not value:
         return None
     if isinstance(value, datetime):
@@ -18,6 +25,8 @@ def iso(value):
 
 
 class Role(db.Model):
+    """系统角色及其职责说明。"""
+
     __tablename__ = "role"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -31,6 +40,8 @@ class Role(db.Model):
 
 
 class Department(db.Model):
+    """临床科室基础字典。"""
+
     __tablename__ = "department"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +55,8 @@ class Department(db.Model):
 
 
 class User(db.Model):
+    """系统用户，关联角色与科室。"""
+
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -61,12 +74,15 @@ class User(db.Model):
     department = db.relationship("Department", backref="users")
 
     def set_password(self, password):
+        """使用 Werkzeug 安全算法保存密码哈希。"""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """校验明文密码与已保存的密码哈希是否匹配。"""
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
+        """返回用户资料，不包含密码哈希。"""
         return {
             "id": self.id,
             "username": self.username,
@@ -83,6 +99,8 @@ class User(db.Model):
 
 
 class BloodProductDict(db.Model):
+    """血液品种字典，维护保质期、安全库存与计量单位。"""
+
     __tablename__ = "blood_product_dict"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -95,6 +113,8 @@ class BloodProductDict(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     def to_dict(self):
+        """返回品种字典 JSON。"""
+
         return {
             "id": self.id,
             "name": self.name,
@@ -107,6 +127,8 @@ class BloodProductDict(db.Model):
 
 
 class Fridge(db.Model):
+    """储血设备及其容量、状态。"""
+
     __tablename__ = "fridge"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -118,6 +140,8 @@ class Fridge(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     def to_dict(self):
+        """返回储血设备 JSON。"""
+
         return {
             "id": self.id,
             "code": self.code,
@@ -129,6 +153,8 @@ class Fridge(db.Model):
 
 
 class BloodBag(db.Model):
+    """血袋库存实体，保存复检结果与当前流转状态。"""
+
     __tablename__ = "blood_bag"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -159,10 +185,12 @@ class BloodBag(db.Model):
 
     @property
     def days_to_expiry(self):
+        """返回距有效期的剩余天数；已过期时返回负值。"""
         return (self.expiry_date - date.today()).days
 
     @property
     def expiry_level(self):
+        """返回前端使用的效期级别：expired/danger/warning/ok。"""
         if self.status == "已过期" or self.days_to_expiry <= 0:
             return "expired"
         if self.days_to_expiry <= 3:
@@ -172,6 +200,7 @@ class BloodBag(db.Model):
         return "ok"
 
     def to_dict(self, include_retest=True):
+        """返回血袋 JSON，可按需省略复检结果以减小列表响应体积。"""
         data = {
             "id": self.id,
             "bag_no": self.bag_no,
@@ -205,6 +234,8 @@ class BloodBag(db.Model):
 
 
 class TransfusionRequest(db.Model):
+    """临床输血申请单，状态贯穿申请、配血、发血和执行。"""
+
     __tablename__ = "transfusion_request"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -230,6 +261,7 @@ class TransfusionRequest(db.Model):
     doctor = db.relationship("User")
 
     def to_dict(self):
+        """返回申请单 JSON。"""
         return {
             "id": self.id,
             "request_no": self.request_no,
@@ -255,6 +287,8 @@ class TransfusionRequest(db.Model):
 
 
 class CrossMatch(db.Model):
+    """配血记录；``is_active`` 标识当前有效的备血锁定关系。"""
+
     __tablename__ = "cross_match"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -275,6 +309,7 @@ class CrossMatch(db.Model):
     technician = db.relationship("User")
 
     def to_dict(self):
+        """返回配血记录及关联申请单、血袋摘要。"""
         return {
             "id": self.id,
             "request_id": self.request_id,
@@ -297,6 +332,8 @@ class CrossMatch(db.Model):
 
 
 class IssueRecord(db.Model):
+    """发血记录，保存核对项、领血护士和执行状态。"""
+
     __tablename__ = "issue_record"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -317,12 +354,14 @@ class IssueRecord(db.Model):
     executed_by = db.relationship("User", foreign_keys=[executed_by_id])
 
     def bags(self):
+        """按 ``bag_ids`` 查询本次发放的血袋实体。"""
         ids = self.bag_ids or []
         if not ids:
             return []
         return BloodBag.query.filter(BloodBag.id.in_(ids)).all()
 
     def to_dict(self, include_bags=True):
+        """返回发血记录 JSON，可控制是否附带完整血袋列表。"""
         bag_list = self.bags() if include_bags else []
         return {
             "id": self.id,
@@ -350,6 +389,8 @@ class IssueRecord(db.Model):
 
 
 class AdverseReaction(db.Model):
+    """输血不良反应记录。"""
+
     __tablename__ = "adverse_reaction"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -370,6 +411,7 @@ class AdverseReaction(db.Model):
     nurse = db.relationship("User")
 
     def to_dict(self):
+        """返回不良反应 JSON。"""
         return {
             "id": self.id,
             "issue_record_id": self.issue_record_id,
@@ -390,6 +432,8 @@ class AdverseReaction(db.Model):
 
 
 class ScrapRecord(db.Model):
+    """血袋报废申请与审批记录。"""
+
     __tablename__ = "scrap_record"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -407,6 +451,7 @@ class ScrapRecord(db.Model):
     approver = db.relationship("User", foreign_keys=[approver_id])
 
     def to_dict(self):
+        """返回报废记录 JSON。"""
         return {
             "id": self.id,
             "bag_id": self.bag_id,
@@ -427,6 +472,8 @@ class ScrapRecord(db.Model):
 
 
 class Alert(db.Model):
+    """库存、效期与流程超时预警。"""
+
     __tablename__ = "alert"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -444,6 +491,7 @@ class Alert(db.Model):
     handled_by = db.relationship("User")
 
     def to_dict(self):
+        """返回预警 JSON。"""
         return {
             "id": self.id,
             "type": self.type,
@@ -460,6 +508,8 @@ class Alert(db.Model):
 
 
 class ScanLog(db.Model):
+    """预警扫描执行日志。"""
+
     __tablename__ = "scan_log"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -470,6 +520,7 @@ class ScanLog(db.Model):
     cost_ms = db.Column(db.Integer, default=0, nullable=False)
 
     def to_dict(self):
+        """返回扫描日志 JSON。"""
         return {
             "id": self.id,
             "scanned_at": iso(self.scanned_at),
@@ -481,6 +532,8 @@ class ScanLog(db.Model):
 
 
 class OperationLog(db.Model):
+    """关键业务操作审计日志。"""
+
     __tablename__ = "operation_log"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -495,6 +548,7 @@ class OperationLog(db.Model):
     user = db.relationship("User")
 
     def to_dict(self):
+        """返回审计日志 JSON。"""
         return {
             "id": self.id,
             "username": self.username,
@@ -507,6 +561,8 @@ class OperationLog(db.Model):
 
 
 class CompatibilityRule(db.Model):
+    """可扩展的输血相容性规则表。"""
+
     __tablename__ = "compatibility_rule"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -518,6 +574,8 @@ class CompatibilityRule(db.Model):
 
 
 class SchemaComment(db.Model):
+    """SQLite 表结构与字段中文注释的持久化载体。"""
+
     __tablename__ = "schema_comment"
 
     id = db.Column(db.Integer, primary_key=True)

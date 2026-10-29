@@ -1,3 +1,9 @@
+"""预警扫描与后台调度。
+
+扫描任务覆盖血袋过期、临期、低库存、待配血超时和复检未完成五类规则；
+同类型、同对象且未处理的预警不会重复生成。
+"""
+
 import time
 from datetime import date, datetime, timedelta
 
@@ -7,6 +13,11 @@ from models import Alert, BloodBag, BloodProductDict, ScanLog, TransfusionReques
 
 
 def _create_alert(alert_type, level, related_id, related_type, content):
+    """创建去重后的预警记录。
+
+    Returns:
+        int: 新增返回 1，已存在未处理同类预警返回 0。
+    """
     exists = Alert.query.filter_by(
         type=alert_type,
         related_id=related_id,
@@ -28,6 +39,17 @@ def _create_alert(alert_type, level, related_id, related_type, content):
 
 
 def scan_alerts(trigger_type="定时"):
+    """执行一次全量预警扫描并写入扫描日志。
+
+    Args:
+        trigger_type: 触发来源，取值“定时”或“手动”，用于审计区分。
+
+    Returns:
+        dict: 新增预警数、过期血袋数、扫描时间和耗时。
+
+    Notes:
+        扫描会顺带把已到期血袋状态更新为“已过期”，最终由本函数统一提交事务。
+    """
     started = time.perf_counter()
     today = date.today()
     now = datetime.now()
@@ -136,6 +158,14 @@ def scan_alerts(trigger_type="定时"):
 
 
 def start_scheduler(app):
+    """启动后台预警定时任务。
+
+    Args:
+        app: Flask 应用实例，任务运行时会在其应用上下文中执行扫描。
+
+    Returns:
+        BackgroundScheduler: 已注册并启动的调度器。
+    """
     from apscheduler.schedulers.background import BackgroundScheduler
 
     scheduler = BackgroundScheduler(daemon=True, timezone="Asia/Shanghai")

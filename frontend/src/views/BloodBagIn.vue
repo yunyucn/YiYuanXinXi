@@ -1,4 +1,5 @@
 <script setup>
+/** 血液入库：支持单袋录入和批量录入，并展示品种对应的效期规则。 */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Remove } from '@element-plus/icons-vue'
@@ -25,10 +26,12 @@ const retestOptions = ['合格', '不合格']
 const bloodTypes = ['A', 'B', 'AB', 'O']
 const rhOptions = ['D阳性', 'D阴性']
 
+/** 生成七项复检默认合格结果。 */
 function emptyRetest() {
   return Object.fromEntries(retestLabels.map((item) => [item.key, '合格']))
 }
 
+/** 生成单袋入库表单初始值。 */
 function emptyBag() {
   return {
     product_name: '',
@@ -69,10 +72,14 @@ const rules = {
   fridge_id: [{ required: true, message: '入库必须选择冰箱', trigger: 'change' }],
 }
 
+/** 品种名称到字典对象的索引。 */
 const productMap = computed(() => Object.fromEntries(products.value.map((item) => [item.name, item])))
+/** 当前单袋表单选中的品种。 */
 const singleProduct = computed(() => productMap.value[single.product_name])
+/** 根据品种保质期预测有效期。 */
 const singleExpiry = computed(() => (singleProduct.value ? addDays(single.collection_date, singleProduct.value.shelf_life_days) : '-'))
 
+/** 品种变化时带出推荐规格和数量。 */
 function onSingleProductChange(name) {
   const product = productMap.value[name]
   if (product) {
@@ -81,16 +88,19 @@ function onSingleProductChange(name) {
   }
 }
 
+/** 计算批量录入行的预计有效期。 */
 function rowExpiry(row) {
   const product = productMap.value[row.product_name]
   return product ? addDays(batch.collection_date, product.shelf_life_days) : '-'
 }
 
+/** 重置单袋表单及校验状态。 */
 function resetSingle() {
   Object.assign(single, emptyBag())
   formRef.value?.clearValidate()
 }
 
+/** 校验并提交单袋入库；复检不合格时后端会转待审批报废。 */
 async function submitSingle() {
   try {
     await formRef.value.validate()
@@ -113,15 +123,18 @@ async function submitSingle() {
   }
 }
 
+/** 批量录入增加一行。 */
 function addBatchRow() {
   batch.items.push({ product_name: '', blood_type: 'A', rh: 'D阳性', quantity: 1, donor_no: '' })
 }
 
+/** 删除批量录入指定行，至少保留一行。 */
 function removeBatchRow(index) {
   if (batch.items.length <= 1) return
   batch.items.splice(index, 1)
 }
 
+/** 校验批量表单并一次性提交最多 20 条入库记录。 */
 async function submitBatch() {
   if (!batch.fridge_id) {
     ElMessage.warning('批量入库必须选择存放冰箱')
@@ -159,6 +172,7 @@ async function submitBatch() {
   }
 }
 
+// 初始化品种和可用冰箱字典。
 onMounted(async () => {
   const [productList, fridgeList] = await Promise.all([systemApi.products(), systemApi.fridges()])
   products.value = productList

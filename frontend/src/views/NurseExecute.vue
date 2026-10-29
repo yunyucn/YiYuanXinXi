@@ -1,4 +1,5 @@
 <script setup>
+/** 护士输血执行：确认执行、查看记录并上报不良反应。 */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { FirstAidKit, Printer, Refresh, Search, Warning } from '@element-plus/icons-vue'
@@ -32,14 +33,17 @@ const adverseForm = reactive({
 
 const reactionTypes = ['发热', '过敏', '溶血', '其他']
 const severities = ['轻度', '中度', '重度']
+/** 当前页签对应的发血执行状态。 */
 const tabStatus = computed(() => (activeTab.value === 'pending' ? '待执行' : '已完成'))
 
+/** 返回本地时区的当前日期时间，供不良反应表单默认值使用。 */
 function nowDateTime() {
   const now = new Date()
   const offset = now.getTimezoneOffset() * 60000
   return new Date(now.getTime() - offset).toISOString().slice(0, 19)
 }
 
+/** 按执行状态和关键字加载发血记录。 */
 async function loadIssues() {
   loading.value = true
   try {
@@ -56,11 +60,13 @@ async function loadIssues() {
   }
 }
 
+/** 搜索后回到第一页。 */
 function search() {
   page.value = 1
   loadIssues()
 }
 
+/** 打开发血记录详情。 */
 async function openDetail(row) {
   detailVisible.value = true
   detailLoading.value = true
@@ -72,6 +78,7 @@ async function openDetail(row) {
   }
 }
 
+/** 护士确认输血执行，成功后刷新列表和详情。 */
 async function execute(row) {
   await ElMessageBox.confirm(
     `确认已为患者 ${row.patient_name}（${row.admission_no}）完成输血执行？确认后申请单将转为已完成。`,
@@ -89,6 +96,7 @@ async function execute(row) {
   }
 }
 
+/** 打开不良反应上报弹窗，并按需补全血袋信息。 */
 async function openAdverse(row) {
   adverseIssue.value = row
   if (!row.bags?.length) {
@@ -106,6 +114,7 @@ async function openAdverse(row) {
   adverseVisible.value = true
 }
 
+/** 提交不良反应记录，并刷新当前详情。 */
 async function submitAdverse() {
   if (!adverseForm.bag_id) {
     ElMessage.warning('请选择发生不良反应的血袋')
@@ -137,10 +146,12 @@ async function submitAdverse() {
   }
 }
 
+/** 新窗口打印输血记录单。 */
 function printRecord(id) {
   window.open(`/print/record/${id}`, '_blank')
 }
 
+/** 根据当前页签生成执行或上报反应操作。 */
 function executeActions(row) {
   return [
     { label: '详情', onClick: () => openDetail(row) },
@@ -157,6 +168,7 @@ function executeActions(row) {
   ]
 }
 
+// 切换页签时重置分页和关键字。
 watch(activeTab, () => {
   page.value = 1
   keyword.value = ''

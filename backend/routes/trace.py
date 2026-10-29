@@ -1,3 +1,5 @@
+"""患者输血全流程追溯接口。"""
+
 from datetime import datetime
 
 from flask import Blueprint
@@ -11,12 +13,18 @@ bp = Blueprint("trace", __name__)
 
 
 def _event_time(value):
+    """为事件排序提供可比较的时间值，空时间排在最后。"""
     return value or datetime.max
 
 
 @bp.get("/trace/<string:admission_no>")
 @jwt_required()
 def trace_patient(admission_no):
+    """按住院号聚合申请、配血、发血、执行和不良反应事件。
+
+    Returns:
+        dict: 患者摘要、统计信息及按发生时间升序排列的追溯事件。
+    """
     requests = (
         TransfusionRequest.query.filter(TransfusionRequest.admission_no == admission_no)
         .order_by(TransfusionRequest.requested_at.asc())

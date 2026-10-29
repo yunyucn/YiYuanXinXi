@@ -1,4 +1,5 @@
 <script setup>
+/** 主任端统计报表：日期区间统计、四类图表与 CSV 导出。 */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Refresh } from '@element-plus/icons-vue'
@@ -19,6 +20,7 @@ const deptRef = ref(null)
 const adverseRef = ref(null)
 const charts = { trend: null, type: null, dept: null, adverse: null }
 
+/** 将报表汇总数据转换为指标卡片。 */
 const cards = computed(() => {
   const data = report.value?.cards || {}
   return [
@@ -29,8 +31,10 @@ const cards = computed(() => {
   ]
 })
 
+/** 每日出入库明细。 */
 const trendRows = computed(() => report.value?.trend || [])
 
+/** 按当前主题渲染趋势、血型、科室和不良反应四类图表。 */
 function renderCharts() {
   if (!report.value) return
   const textColor = chartTextColor(appStore.dark)
@@ -141,6 +145,7 @@ function renderCharts() {
   }
 }
 
+/** 校验日期区间并加载报表数据。 */
 async function loadReport() {
   if (!range.value?.length) {
     ElMessage.warning('请选择统计日期范围')
@@ -156,6 +161,7 @@ async function loadReport() {
   }
 }
 
+/** 按当前日期区间导出报表 CSV。 */
 async function exportCsv() {
   if (!range.value?.length) return
   exporting.value = true
@@ -168,20 +174,24 @@ async function exportCsv() {
   }
 }
 
+/** 窗口变化时同步所有图表尺寸。 */
 function resizeCharts() {
   Object.values(charts).forEach((chart) => chart?.resize())
 }
 
+// 首屏加载报表并监听窗口缩放。
 onMounted(() => {
   loadReport()
   window.addEventListener('resize', resizeCharts)
 })
 
+// 离开页面时释放监听和图表实例。
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCharts)
   disposeCharts(Object.values(charts))
 })
 
+// 明暗主题变化后重绘图表。
 watch(() => appStore.dark, () => nextTick(renderCharts))
 </script>
 

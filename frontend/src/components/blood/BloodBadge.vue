@@ -1,4 +1,5 @@
 <script setup>
+/** 血型圆形标识，按 ABO 类型使用固定系统色。 */
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -6,6 +7,7 @@ const props = defineProps({
   size: { type: Number, default: 28 },
 })
 
+/** ABO 血型对应的标识色。 */
 const colors = {
   A: '#2563EB',
   B: '#D97706',
@@ -13,6 +15,7 @@ const colors = {
   O: '#059669',
 }
 
+/** 根据尺寸和血型生成标识样式。 */
 const style = computed(() => ({
   width: `${props.size}px`,
   height: `${props.size}px`,

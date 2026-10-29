@@ -1,4 +1,5 @@
 <script setup>
+/** 患者全周期追溯：按住院号聚合申请、配血、发血、执行和不良反应事件。 */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -23,9 +24,12 @@ const eventMeta = {
   adverse: { label: '不良反应', icon: Warning },
 }
 
+/** 追溯统计摘要。 */
 const summary = computed(() => result.value?.summary || { request_count: 0, bag_count: 0, adverse_count: 0 })
+/** 按时间升序排列的追溯事件。 */
 const events = computed(() => result.value?.events || [])
 
+/** 校验住院号、加载追溯数据并同步地址栏查询参数。 */
 async function loadTrace() {
   const value = admissionNo.value.trim()
   if (!value) {
@@ -42,11 +46,13 @@ async function loadTrace() {
   }
 }
 
+/** 快捷查询演示住院号。 */
 function useDemo(value) {
   admissionNo.value = value
   loadTrace()
 }
 
+/** 过滤事件详情中的空值，生成键值展示列表。 */
 function detailEntries(detail) {
   return Object.entries(detail || {}).filter(([, value]) => value !== null && value !== undefined && value !== '')
 }

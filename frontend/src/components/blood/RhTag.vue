@@ -1,10 +1,12 @@
 <script setup>
+/** Rh 阴阳性简写标签。 */
 import { computed } from 'vue'
 
 const props = defineProps({
   rh: { type: String, default: 'D阳性' },
 })
 
+/** 兼容“阴性”“Rh-”等后端写法，统一识别为 Rh 阴性。 */
 const negative = computed(() => String(props.rh).includes('阴') || String(props.rh).endsWith('-'))
 </script>
 

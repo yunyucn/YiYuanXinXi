@@ -1,4 +1,5 @@
 <script setup>
+/** 首页仪表盘：统计卡片、七日出库趋势和血型库存分布。 */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Box, Clock, FirstAidKit, Warning } from '@element-plus/icons-vue'
@@ -17,8 +18,10 @@ const trendRef = ref(null)
 const typeRef = ref(null)
 let trendChart = null
 let typeChart = null
+/** 当前角色是否可见预警摘要。 */
 const canViewAlerts = computed(() => auth.canAccess('alerts'))
 
+/** 将后端统计结果转换为首页卡片配置。 */
 const cards = computed(() => {
   const data = summary.value?.cards || {}
   return [
@@ -57,10 +60,12 @@ const cards = computed(() => {
   ]
 })
 
+/** 预警级别到样式类的映射。 */
 function levelClass(level) {
   return { 严重: 'danger', 警告: 'warning', 提示: 'info' }[level] || 'info'
 }
 
+/** 根据当前主题和统计数据渲染趋势图与库存环形图。 */
 function renderCharts() {
   if (!summary.value) return
   const dark = appStore.dark
@@ -142,6 +147,7 @@ function renderCharts() {
   }
 }
 
+/** 拉取首页统计并等待 DOM 更新后渲染图表。 */
 async function loadData() {
   loading.value = true
   try {
@@ -153,21 +159,25 @@ async function loadData() {
   }
 }
 
+/** 窗口尺寸变化时同步图表尺寸。 */
 function resizeCharts() {
   trendChart?.resize()
   typeChart?.resize()
 }
 
+// 首屏加载数据，并注册窗口缩放监听。
 onMounted(() => {
   loadData()
   window.addEventListener('resize', resizeCharts)
 })
 
+// 页面卸载时移除监听并销毁图表实例。
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCharts)
   disposeCharts([trendChart, typeChart])
 })
 
+// 主题切换后重绘图表，保证坐标轴与文字颜色同步。
 watch(() => appStore.dark, () => nextTick(renderCharts))
 </script>
 

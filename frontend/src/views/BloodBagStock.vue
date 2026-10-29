@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 血袋库存：列表与冰箱实物视图。
+ *
+ * 报废操作仅对技师展示，发血、报废血袋不会出现在冰箱实物库存中。
+ */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -37,9 +42,12 @@ const filters = reactive({
 
 const statuses = ['在库', '备血锁定', '已发血', '已报废', '已过期']
 const bloodTypes = ['A', 'B', 'AB', 'O']
+/** 当前角色是否可执行报废等库存操作。 */
 const canOperate = computed(() => auth.canAccess('stockOperate'))
+/** 当前选中的储血设备。 */
 const selectedFridge = computed(() => fridgeData.value.find((item) => item.id === selectedFridgeId.value))
 
+/** 按效期风险返回行样式。 */
 function rowClass({ row }) {
   if (row.status === '已过期' || row.expiry_level === 'expired') return 'expired-row'
   if (row.expiry_level === 'danger') return 'danger-row'
@@ -47,6 +55,7 @@ function rowClass({ row }) {
   return ''
 }
 
+/** 按筛选条件加载血袋列表。 */
 async function loadBags() {
   loading.value = true
   try {
@@ -63,6 +72,7 @@ async function loadBags() {
   }
 }
 
+/** 加载冰箱实物库存；首次进入时默认选中第一台冰箱。 */
 async function loadFridges() {
   fridgeData.value = await bagApi.fridgeOverview()
   if (!selectedFridgeId.value && fridgeData.value.length) {
@@ -70,17 +80,20 @@ async function loadFridges() {
   }
 }
 
+/** 筛选后回到第一页查询。 */
 function search() {
   page.value = 1
   loadBags()
 }
 
+/** 清空库存筛选条件。 */
 function resetFilters() {
   Object.assign(filters, { status: '', product_name: '', blood_type: '', fridge_id: null, keyword: '' })
   page.value = 1
   loadBags()
 }
 
+/** 打开血袋详情，兼容列表行和路由传入的 ID。 */
 async function openDetail(rowOrId) {
   const id = typeof rowOrId === 'object' ? rowOrId.id : rowOrId
   detailVisible.value = true
@@ -92,16 +105,19 @@ async function openDetail(rowOrId) {
   }
 }
 
+/** 新窗口打印血袋标签。 */
 function printLabel(row) {
   window.open(`/print/label/${row.id}`, '_blank')
 }
 
+/** 打开报废申请弹窗并带入所选血袋。 */
 function openScrap(rows) {
   scrapForm.bag_ids = rows.map((row) => row.id)
   scrapForm.reason = ''
   scrapVisible.value = true
 }
 
+/** 按血袋状态和角色权限生成操作列。 */
 function bagActions(row) {
   const actions = [
     { label: '详情', onClick: () => openDetail(row) },
@@ -113,6 +129,7 @@ function bagActions(row) {
   return actions
 }
 
+/** 提交报废申请并刷新库存与冰箱视图。 */
 async function submitScrap() {
   if (!scrapForm.bag_ids.length) {
     ElMessage.warning('请选择报废血袋')
@@ -134,6 +151,7 @@ async function submitScrap() {
   }
 }
 
+/** 对勾选血袋发起批量报废。 */
 function batchScrap() {
   if (!selection.value.length) {
     ElMessage.warning('请先勾选需要报废的血袋')
@@ -142,18 +160,22 @@ function batchScrap() {
   openScrap(selection.value)
 }
 
+/** 返回冰箱储位对应的效期样式类。 */
 function cellClass(bag) {
   return `cell-${bag.expiry_level || 'ok'}`
 }
 
+/** 生成冰箱储位的悬浮提示。 */
 function cellTitle(bag) {
   return `${bag.bag_no}｜${bag.product_name}｜${bag.blood_type} ${bag.rh}｜有效期 ${formatDate(bag.expiry_date)}｜${bag.days_to_expiry <= 0 ? '已过期' : bag.days_to_expiry + ' 天'}`
 }
 
+// 切换到冰箱视图时触发实物库存刷新。
 watch(activeTab, (value) => {
   if (value === 'fridge') loadFridges()
 })
 
+// 初始化字典、库存和冰箱数据，并支持从预警链接直接打开血袋详情。
 onMounted(async () => {
   const [productList, fridgeList] = await Promise.all([systemApi.products(), systemApi.fridges()])
   products.value = productList

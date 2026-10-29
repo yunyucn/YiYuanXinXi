@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 预警中心：仅技师、主任和管理员可访问。
+ *
+ * 页面负责筛选、手动扫描、预警处理及扫描日志展示，权限由路由和后端双重校验。
+ */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -26,8 +31,10 @@ const filters = reactive({ type: '', level: '', handled: '' })
 const alertTypes = ['临期', '过期', '低库存', '待配血超时', '复检未完成']
 const levels = ['严重', '警告', '提示']
 
+/** 当前页未处理预警数量。 */
 const unhandledCount = computed(() => alerts.value.filter((item) => !item.is_handled).length)
 
+/** 将预警类型映射为标签颜色。 */
 function typeTag(type) {
   return {
     临期: 'warning',
@@ -38,10 +45,12 @@ function typeTag(type) {
   }[type] || 'info'
 }
 
+/** 将预警级别映射为标签颜色。 */
 function levelTag(level) {
   return { 严重: 'danger', 警告: 'warning', 提示: 'info' }[level] || 'info'
 }
 
+/** 按未处理状态和级别返回行样式。 */
 function levelRowClass({ row }) {
   if (row.is_handled) return 'handled-row'
   if (row.level === '严重') return 'danger-row'
@@ -49,6 +58,7 @@ function levelRowClass({ row }) {
   return ''
 }
 
+/** 加载当前筛选条件下的预警分页数据。 */
 async function loadAlerts() {
   const data = await alertApi.list({
     type: filters.type || undefined,
@@ -61,10 +71,12 @@ async function loadAlerts() {
   total.value = data.total
 }
 
+/** 加载最近扫描记录和下次扫描时间。 */
 async function loadLogs() {
   scanInfo.value = await alertApi.scanLogs()
 }
 
+/** 并行刷新预警、扫描日志和顶栏角标。 */
 async function loadAll() {
   loading.value = true
   try {
@@ -74,6 +86,7 @@ async function loadAll() {
   }
 }
 
+/** 手动触发预警扫描，并刷新页面和角标。 */
 async function refreshScan() {
   scanning.value = true
   try {
@@ -85,11 +98,13 @@ async function refreshScan() {
   }
 }
 
+/** 筛选后回到第一页查询。 */
 function search() {
   page.value = 1
   loadAlerts()
 }
 
+/** 重置预警筛选条件。 */
 function resetFilters() {
   filters.type = ''
   filters.level = ''
@@ -98,12 +113,14 @@ function resetFilters() {
   loadAlerts()
 }
 
+/** 打开预警处理弹窗。 */
 function openHandle(row) {
   handleTarget.value = row
   handleNote.value = ''
   handleVisible.value = true
 }
 
+/** 提交处理备注并刷新预警摘要。 */
 async function submitHandle() {
   if (!handleNote.value.trim()) {
     ElMessage.warning('请填写处理备注')
@@ -120,10 +137,12 @@ async function submitHandle() {
   }
 }
 
+/** 跳转到预警关联的血袋或申请单页面。 */
 function openRelated(row) {
   if (row.link) router.push(row.link)
 }
 
+/** 根据处理状态生成操作列配置。 */
 function alertActions(row) {
   if (!row.is_handled) return [{ label: '处理', icon: Check, emphasis: true, onClick: () => openHandle(row) }]
   return [

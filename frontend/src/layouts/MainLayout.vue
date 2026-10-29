@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 主布局：按角色生成菜单、展示首页预警角标并承载全局异常兜底。
+ *
+ * 菜单过滤只负责界面可见性，接口权限仍由后端 `roles_required` 强制执行。
+ */
 import { computed, onBeforeUnmount, onErrorCaptured, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
@@ -30,6 +35,7 @@ const bellRef = ref(null)
 const routeError = ref(null)
 let timer = null
 
+/** 角色编码到中文名称的展示映射。 */
 const roleNames = {
   admin: '血库管理员',
   tech: '输血科技师',
@@ -38,6 +44,7 @@ const roleNames = {
   director: '科室主任',
 }
 
+/** 主导航配置，子菜单通过权限矩阵过滤。 */
 const menus = [
   { path: '/dashboard', label: '首页仪表盘', icon: HomeFilled },
   {
@@ -72,6 +79,7 @@ const menus = [
   { path: '/system', label: '系统管理', icon: Setting, roles: ACCESS.system },
 ]
 
+/** 过滤无权限菜单并移除空分组。 */
 const visibleMenus = computed(() =>
   menus
     .map((menu) => {
@@ -83,14 +91,19 @@ const visibleMenus = computed(() =>
     .filter((menu) => (menu.children ? menu.children.length > 0 : auth.hasRole(menu.roles))),
 )
 
+/** 当前页面标题。 */
 const currentTitle = computed(() => route.meta.title || '输血管理分系统')
+/** 顶栏用户头像文字。 */
 const userInitial = computed(() => auth.user?.real_name?.slice(0, 1) || '血')
+/** 当前角色是否可见预警入口。 */
 const canViewAlerts = computed(() => auth.canAccess('alerts'))
 
+/** 将预警级别映射为下拉项样式。 */
 function levelClass(level) {
   return { 严重: 'danger', 警告: 'warning', 提示: 'info' }[level] || 'info'
 }
 
+/** 处理用户菜单中的退出登录与追溯跳转。 */
 async function handleCommand(command) {
   if (command === 'logout') {
     await ElMessageBox.confirm('确认退出当前账号吗？', '退出登录', { type: 'warning' })
@@ -102,23 +115,27 @@ async function handleCommand(command) {
   }
 }
 
+/** 具有预警权限时跳转预警中心。 */
 function goAlert() {
   if (!canViewAlerts.value) return
   bellRef.value?.hide?.()
   router.push('/alerts')
 }
 
+// 捕获子页面渲染异常，展示可恢复的错误提示，避免整页白屏。
 onErrorCaptured((error) => {
   routeError.value = error
   console.error('[route-error]', error)
   return false
 })
 
+/** 清除路由错误并重新加载当前页面。 */
 function retryRoute() {
   routeError.value = null
   window.location.reload()
 }
 
+// 有权限时每分钟刷新预警角标；无权限时主动清空残留状态。
 onMounted(() => {
   if (canViewAlerts.value) {
     appStore.fetchAlertSummary()
@@ -128,6 +145,7 @@ onMounted(() => {
   }
 })
 
+// 离开布局时释放轮询定时器。
 onBeforeUnmount(() => {
   if (timer) window.clearInterval(timer)
 })

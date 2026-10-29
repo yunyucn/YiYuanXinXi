@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 系统管理：用户、科室、品种、冰箱字典及操作日志。
+ *
+ * 页面仅管理员可进入；用户启停、密码重置和基础数据写操作均会写入后端审计日志。
+ */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Edit, Plus, Refresh, Search } from '@element-plus/icons-vue'
@@ -43,16 +48,21 @@ const fridgeVisible = ref(false)
 const fridgeSaving = ref(false)
 const fridgeForm = reactive({ id: null, code: '', name: '', location: '', capacity: 30, status: '正常' })
 
+/** 用户表单是否处于编辑模式。 */
 const isEditingUser = computed(() => Boolean(userForm.id))
+/** 品种表单是否处于编辑模式。 */
 const isEditingProduct = computed(() => Boolean(productForm.id))
+/** 冰箱表单是否处于编辑模式。 */
 const isEditingFridge = computed(() => Boolean(fridgeForm.id))
 const categories = ['全血', '红细胞', '血浆', '血小板', '冷沉淀']
 const units = ['U', 'ml']
 
+/** 角色编码到标签颜色的映射。 */
 function roleTag(role) {
   return { admin: 'danger', tech: 'primary', doctor: 'success', nurse: 'warning', director: 'info' }[role] || 'info'
 }
 
+/** 并行加载用户、科室、角色、品种和冰箱基础数据。 */
 async function loadBase() {
   loading.value = true
   try {
@@ -73,17 +83,20 @@ async function loadBase() {
   }
 }
 
+/** 按关键字分页加载操作审计日志。 */
 async function loadLogs() {
   const data = await systemApi.logs({ keyword: logKeyword.value || undefined, page: logPage.value, page_size: logPageSize.value })
   logs.value = data.items
   logTotal.value = data.total
 }
 
+/** 根据当前页签刷新对应数据。 */
 async function refreshCurrent() {
   if (activeTab.value === 'logs') await loadLogs()
   else await loadBase()
 }
 
+/** 打开新增或编辑用户弹窗。 */
 function openUser(row = null) {
   Object.assign(userForm, {
     id: row?.id || null,
@@ -98,6 +111,7 @@ function openUser(row = null) {
   userVisible.value = true
 }
 
+/** 保存用户资料；编辑时密码留空表示不修改。 */
 async function saveUser() {
   if (!userForm.username.trim() || !userForm.real_name.trim() || !userForm.role_code) {
     ElMessage.warning('用户名、姓名和角色为必填项')
@@ -134,6 +148,7 @@ async function saveUser() {
   }
 }
 
+/** 启用或停用账号，失败时回滚开关状态。 */
 async function toggleUser(row, value) {
   try {
     await systemApi.updateUser(row.id, { is_active: value })
@@ -143,11 +158,13 @@ async function toggleUser(row, value) {
   }
 }
 
+/** 打开新增科室弹窗。 */
 function openDepartment() {
   Object.assign(deptForm, { code: '', name: '', phone: '' })
   deptVisible.value = true
 }
 
+/** 校验并创建科室。 */
 async function saveDepartment() {
   if (!deptForm.code.trim() || !deptForm.name.trim()) {
     ElMessage.warning('科室编码和名称为必填项')
@@ -164,6 +181,7 @@ async function saveDepartment() {
   }
 }
 
+/** 打开新增或编辑血液品种弹窗。 */
 function openProduct(row = null) {
   Object.assign(productForm, {
     id: row?.id || null,
@@ -177,6 +195,7 @@ function openProduct(row = null) {
   productVisible.value = true
 }
 
+/** 保存品种字典配置。 */
 async function saveProduct() {
   if (!productForm.name.trim()) {
     ElMessage.warning('品种名称为必填项')
@@ -215,6 +234,7 @@ async function saveProduct() {
   }
 }
 
+/** 打开新增或编辑储血设备弹窗。 */
 function openFridge(row = null) {
   Object.assign(fridgeForm, {
     id: row?.id || null,
@@ -227,6 +247,7 @@ function openFridge(row = null) {
   fridgeVisible.value = true
 }
 
+/** 保存储血设备信息与运行状态。 */
 async function saveFridge() {
   if (!fridgeForm.code.trim() || !fridgeForm.name.trim() || !fridgeForm.location.trim()) {
     ElMessage.warning('冰箱编号、名称和位置为必填项')
@@ -259,11 +280,13 @@ async function saveFridge() {
   }
 }
 
+/** 搜索审计日志并回到第一页。 */
 function searchLogs() {
   logPage.value = 1
   loadLogs()
 }
 
+// 首次进入日志页签时按需加载审计日志。
 watch(activeTab, (value) => {
   if (value === 'logs' && !logs.value.length) loadLogs()
 })

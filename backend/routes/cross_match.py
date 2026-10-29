@@ -1,3 +1,9 @@
+"""配血工作台接口。
+
+配血前会复核申请状态、血袋状态、品种、效期和 ABO/Rh 相容性；失败时保留
+不相容记录并回滚业务状态，成功后锁定血袋并写入审计日志。
+"""
+
 from datetime import datetime
 
 from flask import Blueprint, request
@@ -15,6 +21,7 @@ METHODS = ("盐水法", "凝聚胺", "微柱凝胶")
 @bp.get("/cross-match/pending")
 @roles_required("tech")
 def pending_workbench():
+    """返回待配血/配血中申请及已等待分钟数，按申请时间升序。"""
     requests = (
         TransfusionRequest.query.filter(TransfusionRequest.status.in_(["待配血", "配血中"]))
         .order_by(TransfusionRequest.requested_at.asc())
@@ -31,6 +38,7 @@ def pending_workbench():
 @bp.get("/cross-matches")
 @roles_required("tech")
 def list_matches():
+    """查询配血记录，可按申请单过滤。"""
     query = CrossMatch.query
     request_id = request.args.get("request_id", type=int)
     if request_id:
@@ -41,6 +49,12 @@ def list_matches():
 @bp.post("/cross-matches")
 @roles_required("tech")
 def create_match():
+    """完成配血并锁定血袋。
+
+    Notes:
+        存在不相容血袋时全部记录标记为失效并返回 400；血袋总量不足申请量时拒绝；
+        成功时申请单转为“已备血”，血袋转为“备血锁定”。
+    """
     payload = request.get_json(silent=True) or {}
     request_id = payload.get("request_id")
     bag_ids = payload.get("bag_ids") or []
@@ -145,6 +159,7 @@ def create_match():
 @bp.post("/cross-matches/cancel")
 @roles_required("tech")
 def cancel_match():
+    """取消当前有效配血，释放血袋并将申请退回“待配血”。"""
     payload = request.get_json(silent=True) or {}
     request_id = payload.get("request_id")
     item = db.session.get(TransfusionRequest, int(request_id)) if request_id else None

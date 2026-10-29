@@ -1,4 +1,5 @@
 <script setup>
+/** 页面装饰 SVG，使用渐变线条强化系统视觉统一性。 */
 import { computed, useId } from 'vue'
 
 const props = defineProps({
@@ -6,6 +7,7 @@ const props = defineProps({
   tone: { type: String, default: 'blue' },
 })
 
+/** 可选装饰色板，与系统业务色彩保持一致。 */
 const palettes = {
   blue: ['#2563eb', '#22d3ee'],
   teal: ['#0d9488', '#38bdf8'],
@@ -14,7 +16,9 @@ const palettes = {
   violet: ['#6d28d9', '#38bdf8'],
 }
 
+/** 当前装饰色板。 */
 const colors = computed(() => palettes[props.tone] || palettes.blue)
+// 为每个实例生成唯一渐变 ID，避免同页多实例互相覆盖。
 const gradientId = `decor-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
 </script>
 

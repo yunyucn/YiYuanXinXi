@@ -1,3 +1,9 @@
+"""系统管理接口。
+
+除品种、冰箱、科室等只读字典外，用户与基础数据维护接口仅管理员可调用。
+所有写操作均记录审计日志。
+"""
+
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
@@ -12,36 +18,42 @@ bp = Blueprint("system", __name__)
 @bp.get("/system/products")
 @jwt_required()
 def list_products():
+    """查询血液品种字典。"""
     return ok([item.to_dict() for item in BloodProductDict.query.order_by(BloodProductDict.id).all()])
 
 
 @bp.get("/system/fridges")
 @jwt_required()
 def list_fridges():
+    """查询储血设备字典。"""
     return ok([item.to_dict() for item in Fridge.query.order_by(Fridge.code).all()])
 
 
 @bp.get("/system/departments")
 @jwt_required()
 def list_departments():
+    """查询科室字典。"""
     return ok([item.to_dict() for item in Department.query.order_by(Department.id).all()])
 
 
 @bp.get("/system/roles")
 @roles_required()
 def list_roles():
+    """查询系统角色；仅管理员可访问。"""
     return ok([item.to_dict() for item in Role.query.order_by(Role.id).all()])
 
 
 @bp.get("/system/users")
 @roles_required()
 def list_users():
+    """查询系统用户；仅管理员可访问。"""
     return ok([item.to_dict() for item in User.query.order_by(User.id).all()])
 
 
 @bp.post("/system/users")
 @roles_required()
 def create_user():
+    """创建系统用户并设置初始密码。"""
     payload = request.get_json(silent=True) or {}
     username = str(payload.get("username", "")).strip()
     real_name = str(payload.get("real_name", "")).strip()
@@ -76,6 +88,7 @@ def create_user():
 @bp.put("/system/users/<int:user_id>")
 @roles_required()
 def update_user(user_id):
+    """更新用户资料、状态、科室或密码。"""
     user = db.session.get(User, user_id)
     if not user:
         return fail("用户不存在", 404)
@@ -97,6 +110,7 @@ def update_user(user_id):
 @bp.post("/system/departments")
 @roles_required()
 def create_department():
+    """新增科室。"""
     payload = request.get_json(silent=True) or {}
     code = str(payload.get("code", "")).strip()
     name = str(payload.get("name", "")).strip()
@@ -115,6 +129,7 @@ def create_department():
 @bp.post("/system/products")
 @roles_required()
 def create_product():
+    """新增血液品种字典。"""
     payload = request.get_json(silent=True) or {}
     name = str(payload.get("name", "")).strip()
     if not name:
@@ -146,6 +161,7 @@ def create_product():
 @bp.put("/system/products/<int:product_id>")
 @roles_required()
 def update_product(product_id):
+    """更新品种分类、保质期、安全库存或单位。"""
     item = db.session.get(BloodProductDict, product_id)
     if not item:
         return fail("品种不存在", 404)
@@ -167,6 +183,7 @@ def update_product(product_id):
 @bp.post("/system/fridges")
 @roles_required()
 def create_fridge():
+    """新增储血设备。"""
     payload = request.get_json(silent=True) or {}
     code = str(payload.get("code", "")).strip()
     name = str(payload.get("name", "")).strip()
@@ -192,6 +209,7 @@ def create_fridge():
 @bp.put("/system/fridges/<int:fridge_id>")
 @roles_required()
 def update_fridge(fridge_id):
+    """更新储血设备位置、容量或运行状态。"""
     item = db.session.get(Fridge, fridge_id)
     if not item:
         return fail("冰箱不存在", 404)
@@ -209,6 +227,7 @@ def update_fridge(fridge_id):
 @bp.get("/system/logs")
 @roles_required()
 def list_logs():
+    """分页查询操作审计日志。"""
     page = max(request.args.get("page", 1, type=int), 1)
     page_size = min(max(request.args.get("page_size", 20, type=int), 1), 100)
     keyword = request.args.get("keyword", "").strip()

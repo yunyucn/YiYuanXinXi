@@ -1,3 +1,9 @@
+"""输血申请单接口。
+
+覆盖医生提交/取消申请、科室查询、技师开始配血和血袋推荐。医生数据默认按
+``doctor_id`` 隔离，只有管理员可跨医生操作。
+"""
+
 from datetime import date, datetime
 
 from flask import Blueprint, request
@@ -11,6 +17,7 @@ bp = Blueprint("request", __name__)
 
 
 def generate_request_no():
+    """生成按日递增的申请单号，例如 ``SQ20261029001``。"""
     prefix = f"SQ{date.today():%Y%m%d}"
     last = (
         TransfusionRequest.query.filter(TransfusionRequest.request_no.like(f"{prefix}%"))
@@ -24,6 +31,15 @@ def generate_request_no():
 @bp.get("/requests")
 @roles_required("doctor", "tech", "director")
 def list_requests():
+    """分页查询输血申请。
+
+    Query Params:
+        status: 申请状态。
+        urgency: 紧急程度。
+        keyword: 申请单号、患者姓名或住院号模糊检索。
+        admission_no: 精确匹配住院号。
+        page/page_size: 分页参数，单页最多 100 条。
+    """
     user = current_user()
     query = TransfusionRequest.query
     if user.role.code == "doctor":
@@ -57,6 +73,11 @@ def list_requests():
 @bp.post("/requests")
 @roles_required("doctor")
 def create_request():
+    """创建输血申请并写入审计日志。
+
+    Notes:
+        仅医生角色可调用；申请单初始状态为“待配血”，申请医生取当前登录用户。
+    """
     payload = request.get_json(silent=True) or {}
     required = ("patient_name", "admission_no", "department", "blood_type", "rh", "diagnosis", "product_name")
     missing = [field for field in required if not str(payload.get(field, "")).strip()]
@@ -102,6 +123,11 @@ def create_request():
 @bp.get("/requests/<int:request_id>")
 @roles_required("doctor", "nurse", "tech", "director")
 def get_request(request_id):
+    """查询申请单详情及配血、发血关联记录。
+
+    Notes:
+        护士仅用于领血/执行环节读取详情；医生只能查看本人提交的申请。
+    """
     item = db.session.get(TransfusionRequest, request_id)
     if not item:
         return fail("申请单不存在", 404)
@@ -117,6 +143,7 @@ def get_request(request_id):
 @bp.post("/requests/<int:request_id>/start-match")
 @roles_required("tech")
 def start_match(request_id):
+    """技师将待配血申请推进到“配血中”。"""
     item = db.session.get(TransfusionRequest, request_id)
     if not item:
         return fail("申请单不存在", 404)
@@ -131,6 +158,11 @@ def start_match(request_id):
 @bp.post("/requests/<int:request_id>/cancel")
 @roles_required("doctor")
 def cancel_request(request_id):
+    """医生取消本人申请，并释放已锁定的备血袋。
+
+    Notes:
+        只允许取消“待配血/配血中”的申请；取消时同步失效配血记录、恢复血袋库存。
+    """
     item = db.session.get(TransfusionRequest, request_id)
     if not item:
         return fail("申请单不存在", 404)
@@ -155,6 +187,11 @@ def cancel_request(request_id):
 @bp.get("/requests/<int:request_id>/recommendations")
 @roles_required("tech")
 def recommendations(request_id):
+    """为待配血申请推荐在库且未过期的同品种血袋。
+
+    Returns:
+        dict: 申请单信息及按相容性、有效期排序的血袋列表。
+    """
     item = db.session.get(TransfusionRequest, request_id)
     if not item:
         return fail("申请单不存在", 404)

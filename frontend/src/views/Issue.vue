@@ -1,4 +1,5 @@
 <script setup>
+/** 发血工作台：待发血队列、四项核对、发血记录与打印。 */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Printer, Refresh, Search } from '@element-plus/icons-vue'
@@ -29,10 +30,14 @@ const checkOptions = [
   '配血结果相容',
 ]
 
+/** 四项发血核对是否全部完成。 */
 const allChecked = computed(() => checkOptions.every((item) => checks.value.includes(item)))
+/** 当前申请关联血袋数量合计。 */
 const selectedQuantity = computed(() => (selected.value?.bags || []).reduce((sum, bag) => sum + Number(bag.quantity || 0), 0))
+/** 待发血申请数量。 */
 const pendingCount = computed(() => pending.value.length)
 
+/** 加载已备血待发血队列。 */
 async function loadPending() {
   loading.value = true
   try {
@@ -44,6 +49,7 @@ async function loadPending() {
   }
 }
 
+/** 按筛选条件加载发血记录。 */
 async function loadRecords() {
   const data = await issueApi.list({
     keyword: filters.keyword || undefined,
@@ -55,21 +61,25 @@ async function loadRecords() {
   total.value = data.total
 }
 
+/** 并行刷新待发血队列和发血记录。 */
 async function refreshAll() {
   await Promise.all([loadPending(), loadRecords()])
 }
 
+/** 选择申请并清空上一单的核对项与领血护士。 */
 function selectPending(item) {
   selected.value = item
   checks.value = []
   pickupNurse.value = ''
 }
 
+/** 重置发血核对表单。 */
 function resetForm() {
   checks.value = []
   pickupNurse.value = ''
 }
 
+/** 提交四项核对并发血，成功后可选立即打印记录单。 */
 async function submitIssue() {
   if (!selected.value) return
   if (!pickupNurse.value.trim()) {
@@ -106,6 +116,7 @@ async function submitIssue() {
   }
 }
 
+/** 打开发血记录详情。 */
 async function openDetail(row) {
   detailVisible.value = true
   detailLoading.value = true
@@ -117,19 +128,23 @@ async function openDetail(row) {
   }
 }
 
+/** 新窗口打印输血记录单。 */
 function printRecord(id) {
   window.open(`/print/record/${id}`, '_blank')
 }
 
+/** 新窗口打印血袋标签。 */
 function printLabel(bagId) {
   window.open(`/print/label/${bagId}`, '_blank')
 }
 
+/** 筛选发血记录并重置分页。 */
 function searchRecords() {
   page.value = 1
   loadRecords()
 }
 
+/** 清空发血记录筛选条件。 */
 function resetRecords() {
   filters.keyword = ''
   filters.execution_status = ''
@@ -137,6 +152,7 @@ function resetRecords() {
   loadRecords()
 }
 
+/** 生成发血记录操作列。 */
 function issueActions(row) {
   return [
     { label: '详情', onClick: () => openDetail(row) },

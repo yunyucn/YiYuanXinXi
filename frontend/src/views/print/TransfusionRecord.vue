@@ -1,4 +1,5 @@
 <script setup>
+/** 输血记录单打印页：合并发血记录、配血结果和申请单信息。 */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Printer, ArrowLeft } from '@element-plus/icons-vue'
@@ -13,12 +14,14 @@ const issue = ref(null)
 const request = ref(null)
 const printedAt = ref('')
 
+/** 生成本地时区的打印时间文本。 */
 function localNowText() {
   const now = new Date()
   const pad = (value) => String(value).padStart(2, '0')
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
 }
 
+/** 将每袋血与对应的配血结果合并为打印行。 */
 const bagRows = computed(() => {
   const matches = issue.value?.cross_matches || []
   return (issue.value?.bags || []).map((bag) => {
@@ -27,6 +30,7 @@ const bagRows = computed(() => {
   })
 })
 
+/** 加载发血记录和申请单详情，供 A4 记录单展示。 */
 async function loadData() {
   loading.value = true
   printedAt.value = localNowText()
@@ -40,10 +44,12 @@ async function loadData() {
   }
 }
 
+/** 调用浏览器打印记录单。 */
 function printPage() {
   window.print()
 }
 
+/** 返回上一页；无历史记录时回到发血工作台。 */
 function goBack() {
   if (window.history.length > 1) router.back()
   else router.push('/issue')

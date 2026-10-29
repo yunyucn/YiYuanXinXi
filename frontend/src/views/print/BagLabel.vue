@@ -1,4 +1,5 @@
 <script setup>
+/** 血袋标签打印页：加载血袋详情并生成二维码。 */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Printer } from '@element-plus/icons-vue'
@@ -13,6 +14,7 @@ const error = ref('')
 const bag = ref(null)
 const qrCode = ref('')
 
+/** 将复检结果对象转换为带中文标签的键值列表。 */
 const retestEntries = computed(() => {
   const labels = {
     blood_type: '定血型',
@@ -26,8 +28,10 @@ const retestEntries = computed(() => {
   return Object.entries(bag.value?.retest_result || {}).map(([key, value]) => ({ label: labels[key] || key, value }))
 })
 
+/** 根据品种选择标签计量单位。 */
 const quantityUnit = computed(() => (bag.value?.product_name === '血浆' ? 'ml' : 'U'))
 
+/** 加载血袋详情并生成包含关键字段的二维码。 */
 async function loadBag() {
   loading.value = true
   try {
@@ -47,10 +51,12 @@ async function loadBag() {
   }
 }
 
+/** 调用浏览器打印血袋标签。 */
 function printPage() {
   window.print()
 }
 
+/** 返回上一页；无历史记录时回到库存页。 */
 function goBack() {
   if (window.history.length > 1) router.back()
   else router.push('/stock')

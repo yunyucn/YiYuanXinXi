@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 输血申请列表。
+ *
+ * 医生可新建和取消本人申请；技师、主任可查看申请队列。医生数据隔离由后端执行。
+ */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -42,7 +47,9 @@ const form = reactive({
 const statuses = ['待配血', '配血中', '已备血', '已发血', '已完成', '已取消']
 const bloodTypes = ['A', 'B', 'AB', 'O']
 const urgencies = ['常规', '紧急', '抢救']
+/** 当前角色是否可新建申请。 */
 const canCreate = computed(() => auth.canAccess('requestCreate'))
+/** 品种名称到字典对象的索引。 */
 const productMap = computed(() => Object.fromEntries(products.value.map((item) => [item.name, item])))
 const rules = {
   patient_name: [{ required: true, message: '请输入患者姓名', trigger: 'blur' }],
@@ -54,6 +61,7 @@ const rules = {
   quantity: [{ required: true, message: '请输入申请量', trigger: 'blur' }],
 }
 
+/** 按筛选条件加载申请单分页数据。 */
 async function loadRequests() {
   loading.value = true
   try {
@@ -65,16 +73,19 @@ async function loadRequests() {
   }
 }
 
+/** 筛选后回到第一页查询。 */
 function search() {
   page.value = 1
   loadRequests()
 }
 
+/** 清空筛选条件并查询。 */
 function resetFilters() {
   Object.assign(filters, { status: '', urgency: '', keyword: '' })
   search()
 }
 
+/** 品种变化时带出默认计量单位和申请量。 */
 function onProductChange(name) {
   const product = productMap.value[name]
   if (!product) return
@@ -82,6 +93,7 @@ function onProductChange(name) {
   form.quantity = product.unit === 'ml' ? 400 : product.name === '全血' ? 1.5 : 2
 }
 
+/** 初始化并打开新建申请弹窗。 */
 function openCreate() {
   Object.assign(form, {
     patient_name: '',
@@ -99,6 +111,7 @@ function openCreate() {
   dialogVisible.value = true
 }
 
+/** 校验并提交输血申请，成功后刷新列表。 */
 async function submit() {
   try {
     await formRef.value.validate()
@@ -116,6 +129,7 @@ async function submit() {
   }
 }
 
+/** 医生确认取消本人申请。 */
 async function cancel(row) {
   await ElMessageBox.confirm(`确认取消申请单 ${row.request_no} 吗？`, '取消申请', { type: 'warning' })
   await requestApi.cancel(row.id, { reason: '申请医生取消' })
@@ -123,6 +137,7 @@ async function cancel(row) {
   loadRequests()
 }
 
+/** 打开申请详情，兼容列表行和路由传入的 ID。 */
 async function openDetail(rowOrId) {
   const id = typeof rowOrId === 'object' ? rowOrId.id : rowOrId
   detailVisible.value = true
@@ -134,6 +149,7 @@ async function openDetail(rowOrId) {
   }
 }
 
+/** 按状态和角色生成申请单操作列。 */
 function requestActions(row) {
   const actions = [
     { label: '详情', onClick: () => openDetail(row) },
@@ -145,6 +161,7 @@ function requestActions(row) {
   return actions
 }
 
+// 初始化字典和列表，并支持从预警链接直接打开申请详情。
 onMounted(async () => {
   const [productList, departmentList] = await Promise.all([systemApi.products(), systemApi.departments()])
   products.value = productList

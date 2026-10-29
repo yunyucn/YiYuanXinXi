@@ -1,3 +1,5 @@
+"""登录、当前用户与退出登录接口。"""
+
 from flask import Blueprint, request
 from flask_jwt_extended import create_access_token, jwt_required
 
@@ -11,6 +13,7 @@ bp = Blueprint("auth", __name__)
 
 @bp.post("/auth/login")
 def login():
+    """校验用户名密码并签发 12 小时有效的 JWT。"""
     payload = request.get_json(silent=True) or {}
     username = str(payload.get("username", "")).strip()
     password = str(payload.get("password", ""))
@@ -28,6 +31,7 @@ def login():
 @bp.get("/auth/me")
 @jwt_required()
 def me():
+    """返回当前登录用户资料，用于前端恢复会话。"""
     user = current_user()
     if not user:
         return fail("用户不存在", 401)
@@ -37,5 +41,6 @@ def me():
 @bp.post("/auth/logout")
 @jwt_required()
 def logout():
+    """退出登录。JWT 为无状态令牌，服务端仅返回成功由前端清理本地凭证。"""
     return ok(None, "已退出登录")
 

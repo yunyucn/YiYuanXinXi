@@ -1,4 +1,5 @@
 <script setup>
+/** 统一页面标题与操作区插槽。 */
 defineProps({
   title: { type: String, default: '' },
   description: { type: String, default: '' },

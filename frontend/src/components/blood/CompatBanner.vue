@@ -1,4 +1,5 @@
 <script setup>
+/** 配血相容性结果提示条。 */
 import { computed } from 'vue'
 import { CircleCheckFilled, WarningFilled } from '@element-plus/icons-vue'
 
@@ -8,6 +9,7 @@ const props = defineProps({
   title: { type: String, default: '' },
 })
 
+/** 优先使用调用方标题，否则按相容级别生成默认标题。 */
 const heading = computed(() => props.title || ({ ok: '相容性校验通过', warn: '相容性提示', fail: '相容性校验不通过' }[props.level] || '相容性结果'))
 </script>
 

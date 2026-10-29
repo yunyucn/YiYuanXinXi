@@ -1,4 +1,5 @@
 <script setup>
+/** 血袋有效期进度条，统一临期与过期视觉口径。 */
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -8,6 +9,7 @@ const props = defineProps({
   level: { type: String, default: '' },
 })
 
+/** 计算剩余有效天数，优先使用后端返回值。 */
 const dayCount = computed(() => {
   if (props.days !== null && props.days !== undefined) return Number(props.days)
   if (!props.expiryDate) return 0
@@ -17,6 +19,7 @@ const dayCount = computed(() => {
   return Math.round((target - today) / 86400000)
 })
 
+/** 判定过期、临期、预警或正常级别。 */
 const level = computed(() => {
   if (props.level) return props.level
   if (props.status === '已过期' || dayCount.value <= 0) return 'expired'
@@ -25,11 +28,13 @@ const level = computed(() => {
   return 'ok'
 })
 
+/** 生成进度条右侧文案。 */
 const label = computed(() => {
   if (level.value === 'expired') return '已过期'
   return `${dayCount.value} 天`
 })
 
+/** 按风险级别计算进度条填充宽度。 */
 const width = computed(() => {
   if (level.value === 'expired') return '100%'
   if (level.value === 'danger') return '30%'

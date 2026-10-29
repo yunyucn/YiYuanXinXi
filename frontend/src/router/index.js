@@ -1,3 +1,10 @@
+/**
+ * 路由表与登录/角色守卫。
+ *
+ * `meta.roles` 与后端权限矩阵保持一致；无权限访问时回到首页，
+ * 未登录访问受保护页面时携带原始地址跳转登录页。
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { ACCESS } from '@/constants/access'
@@ -50,6 +57,7 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
+/** 全局前置守卫：恢复会话、校验登录状态与页面角色权限。 */
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (to.meta.public) {

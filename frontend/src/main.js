@@ -1,3 +1,5 @@
+/** 前端入口：注册 Pinia、路由、全局业务组件和全局样式。 */
+
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 

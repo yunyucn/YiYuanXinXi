@@ -1,4 +1,5 @@
 <script setup>
+/** 输血不良反应列表：筛选、分页、详情查看与全流程追溯入口。 */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Refresh, Search, Warning } from '@element-plus/icons-vue'
@@ -19,13 +20,17 @@ const filters = reactive({ admission_no: '', bag_no: '', reaction_type: '', seve
 const reactionTypes = ['发热', '过敏', '溶血', '其他']
 const severities = ['轻度', '中度', '重度']
 
+/** 当前页重度反应数量。 */
 const pageSevere = computed(() => items.value.filter((item) => item.severity === '重度').length)
+/** 当前页已上报血站数量。 */
 const pageReported = computed(() => items.value.filter((item) => item.reported_to_station).length)
 
+/** 按反应程度返回行样式。 */
 function rowClass({ row }) {
   return row.severity === '重度' ? 'danger-row' : row.severity === '中度' ? 'warning-row' : ''
 }
 
+/** 按当前筛选条件加载不良反应分页数据。 */
 async function loadItems() {
   loading.value = true
   try {
@@ -44,17 +49,20 @@ async function loadItems() {
   }
 }
 
+/** 筛选条件变化或回车时回到第一页查询。 */
 function search() {
   page.value = 1
   loadItems()
 }
 
+/** 清空筛选并重新查询。 */
 function resetFilters() {
   Object.assign(filters, { admission_no: '', bag_no: '', reaction_type: '', severity: '' })
   page.value = 1
   loadItems()
 }
 
+/** 打开指定不良反应的详情抽屉。 */
 async function openDetail(row) {
   detailVisible.value = true
   detailLoading.value = true
@@ -66,10 +74,12 @@ async function openDetail(row) {
   }
 }
 
+/** 跳转到患者全周期追溯页面。 */
 function goTrace(admissionNo) {
   router.push({ path: '/trace', query: { admission_no: admissionNo } })
 }
 
+/** 组装表格操作列配置。 */
 function adverseActions(row) {
   return [
     { label: '详情', onClick: () => openDetail(row) },

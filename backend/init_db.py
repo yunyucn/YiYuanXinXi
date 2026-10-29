@@ -1,3 +1,9 @@
+"""初始化演示数据库并写入业务样例数据。
+
+脚本会重建全部数据表、同步中文字段注释，并生成覆盖各角色和完整业务链路的
+演示数据。仅用于本地课设演示，不应在生产环境执行。
+"""
+
 import os
 from datetime import date, datetime, timedelta
 
@@ -35,6 +41,7 @@ PRODUCT_META = {
 
 
 def qualified_retest():
+    """返回全部项目合格的复检结果模板。"""
     return {
         "blood_type": "合格",
         "rh": "合格",
@@ -47,6 +54,11 @@ def qualified_retest():
 
 
 def seed_database():
+    """重建数据表并写入角色、用户、库存和业务流程样例。
+
+    Notes:
+        函数会执行 ``drop_all``，调用前必须确认目标数据库可被重置。
+    """
     now = datetime.now()
     today = date.today()
     db.drop_all()
@@ -72,6 +84,7 @@ def seed_database():
     db.session.flush()
 
     def make_user(username, real_name, role_code, department=None, title=None):
+        """创建演示用户，默认密码均为 ``123456``。"""
         user = User(
             username=username,
             real_name=real_name,

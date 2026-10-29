@@ -1,3 +1,9 @@
+"""血液入库、库存查询与储血设备概览接口。
+
+入库流程包含品种校验、冰箱状态校验、完整复检结果校验和效期计算；复检不合格
+的血袋不会进入可用库存，而是自动生成待审批报废记录。
+"""
+
 from datetime import date, datetime, timedelta
 
 from flask import Blueprint, request
@@ -21,12 +27,14 @@ RETEST_LABELS = {
 
 
 def parse_date(value):
+    """解析 ``YYYY-MM-DD`` 日期字符串。"""
     if isinstance(value, date):
         return value
     return datetime.strptime(str(value), "%Y-%m-%d").date()
 
 
 def generate_bag_no():
+    """生成按日递增的储血号，例如 ``XZ20261029001``。"""
     prefix = f"XZ{date.today():%Y%m%d}"
     last = (
         BloodBag.query.filter(BloodBag.bag_no.like(f"{prefix}%"))
@@ -38,6 +46,11 @@ def generate_bag_no():
 
 
 def validate_retest(value):
+    """校验七项复检结果是否完整并返回标准化字典。
+
+    Returns:
+        tuple[dict | None, str | None]: 第一项为清洗后的复检结果，第二项为错误信息。
+    """
     if not isinstance(value, dict):
         return None, "请录入完整复检结果"
     missing = [RETEST_LABELS[key] for key in RETEST_FIELDS if not str(value.get(key, "")).strip()]
@@ -48,6 +61,18 @@ def validate_retest(value):
 
 
 def build_bag(payload, user):
+    """校验入库参数并构建血袋实体。
+
+    Args:
+        payload: 入库表单数据。
+        user: 当前操作技师，用于记录创建人。
+
+    Returns:
+        tuple[BloodBag | None, str | None]: 构建成功的血袋或中文错误信息。
+
+    Notes:
+        不合格血袋会被标记为“已报废”并追加待审批报废记录，调用方决定是否提交事务。
+    """
     required = ("product_name", "blood_type", "rh", "specification", "source", "collection_unit", "donor_no")
     missing = [field for field in required if not str(payload.get(field, "")).strip()]
     if missing:
@@ -116,6 +141,7 @@ def build_bag(payload, user):
 @bp.post("/blood-bags")
 @roles_required("tech")
 def create_bag():
+    """单袋入库，成功后记录“血液入库”审计日志。"""
     payload = request.get_json(silent=True) or {}
     user = current_user()
     bag, error = build_bag(payload, user)
@@ -137,6 +163,7 @@ def create_bag():
 @bp.post("/blood-bags/batch")
 @roles_required("tech")
 def create_batch():
+    """批量入库 1 至 20 袋血液，任一条失败则整批回滚。"""
     payload = request.get_json(silent=True) or {}
     items = payload.get("items") or []
     if not items or len(items) > 20:
@@ -160,6 +187,7 @@ def create_batch():
 @bp.get("/blood-bags")
 @roles_required("tech", "nurse", "director")
 def list_bags():
+    """分页查询血袋库存，支持状态、品种、血型、冰箱和关键字筛选。"""
     query = BloodBag.query
     status = request.args.get("status")
     product_name = request.args.get("product_name")
@@ -193,6 +221,7 @@ def list_bags():
 @bp.get("/blood-bags/<int:bag_id>")
 @roles_required("tech", "nurse", "director")
 def get_bag(bag_id):
+    """查询血袋详情及配血、报废、不良反应关联信息。"""
     bag = db.session.get(BloodBag, bag_id)
     if not bag:
         return fail("血袋不存在", 404)
@@ -207,6 +236,7 @@ def get_bag(bag_id):
 @bp.get("/stock/fridges")
 @roles_required("tech", "nurse", "director")
 def fridge_overview():
+    """按储血设备汇总物理库存、临期、过期和容量使用率。"""
     today = date.today()
     result = []
     for fridge in Fridge.query.order_by(Fridge.code).all():

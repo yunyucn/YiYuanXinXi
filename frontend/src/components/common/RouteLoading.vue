@@ -1,4 +1,5 @@
 <script setup>
+/** 路由懒加载期间展示的结构化骨架屏，降低白屏感。 */
 import { Loading } from '@element-plus/icons-vue'
 </script>
 
