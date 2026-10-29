@@ -95,17 +95,21 @@ def scan_logs():
 
 
 @bp.post("/alerts/refresh")
-@roles_required("tech", "director")
+@roles_required("tech")
 def refresh_alerts():
-    """手动触发一次预警扫描。"""
+    """手动触发一次预警扫描，仅输血科技师可发起。"""
     result = scan_alerts("手动")
     return ok(result, "扫描完成")
 
 
 @bp.post("/alerts/<int:alert_id>/handle")
-@roles_required("tech", "director")
+@roles_required("tech")
 def handle_alert(alert_id):
-    """记录处理人、处理时间和备注，将预警标记为已处理。"""
+    """记录处理人、处理时间和备注，将预警标记为已处理。
+
+    Notes:
+        预警处置属于输血科日常操作，主任仅查看与督办，不代为处理。
+    """
     alert = db.session.get(Alert, alert_id)
     if not alert:
         return fail("预警不存在", 404)

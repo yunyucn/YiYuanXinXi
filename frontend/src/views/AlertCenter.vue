@@ -10,10 +10,12 @@ import { ElMessage } from 'element-plus'
 import { Bell, Check, Refresh, Search, Timer, Warning } from '@element-plus/icons-vue'
 import { alertApi } from '@/api'
 import { useAppStore } from '@/store/app'
+import { useAuthStore } from '@/store/auth'
 import { formatDateTime } from '@/utils/format'
 
 const router = useRouter()
 const appStore = useAppStore()
+const auth = useAuthStore()
 const activeTab = ref('alerts')
 const loading = ref(false)
 const scanning = ref(false)
@@ -23,6 +25,8 @@ const page = ref(1)
 const pageSize = ref(20)
 const scanInfo = ref({ last_scan: null, next_scan: null, interval_minutes: 10, logs: [] })
 const handleVisible = ref(false)
+/** 当前角色是否可处置预警：主任仅查看与督办，处理动作归输血科技师。 */
+const canHandle = computed(() => auth.canAccess('alertsHandle'))
 const handleTarget = ref(null)
 const handleNote = ref('')
 const handling = ref(false)
@@ -144,7 +148,8 @@ function openRelated(row) {
 
 /** 根据处理状态生成操作列配置。 */
 function alertActions(row) {
-  if (!row.is_handled) return [{ label: '处理', icon: Check, emphasis: true, onClick: () => openHandle(row) }]
+  if (!row.is_handled && canHandle.value) return [{ label: '处理', icon: Check, emphasis: true, onClick: () => openHandle(row) }]
+  if (!row.is_handled) return [{ label: '待处理', type: 'warning', onClick: () => ElMessage.info('预警由输血科技师处置') }]
   return [
     {
       label: '详情',
@@ -160,10 +165,13 @@ onMounted(loadAll)
 
 <template>
   <div class="page">
-    <PageHeader title="预警中心" description="定时扫描临期、过期、低库存、待配血超时与复检未完成风险，警告与严重预警计入铃铛红点">
+    <PageHeader
+      title="预警中心"
+      :description="canHandle ? '定时扫描临期、过期、低库存、待配血超时与复检未完成风险，警告与严重预警计入铃铛红点' : '查看并督办各类预警，处置动作由输血科技师执行'"
+    >
       <template #actions>
         <el-button :icon="Refresh" :loading="loading" @click="loadAll">刷新</el-button>
-        <el-button type="primary" :icon="Warning" :loading="scanning" @click="refreshScan">立即扫描</el-button>
+        <el-button v-if="canHandle" type="primary" :icon="Warning" :loading="scanning" @click="refreshScan">立即扫描</el-button>
       </template>
     </PageHeader>
 

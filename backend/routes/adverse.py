@@ -26,8 +26,16 @@ def parse_datetime(value):
 @bp.get("/adverse-reactions")
 @roles_required("nurse", "tech", "director")
 def list_reactions():
-    """分页查询不良反应，支持住院号、类型、程度和储血号筛选。"""
+    """分页查询不良反应，支持住院号、类型、程度和储血号筛选。
+
+    Notes:
+        护士只能看到本人上报的记录，技师与主任可查看全部，
+        避免上报人之间互相查看未经授权的病例数据。
+    """
+    user = current_user()
     query = AdverseReaction.query
+    if user and user.role and user.role.code == "nurse":
+        query = query.filter(AdverseReaction.nurse_id == user.id)
     admission_no = request.args.get("admission_no", "").strip()
     reaction_type = request.args.get("reaction_type")
     severity = request.args.get("severity")
@@ -49,10 +57,17 @@ def list_reactions():
 @bp.get("/adverse-reactions/<int:reaction_id>")
 @roles_required("nurse", "tech", "director")
 def get_reaction(reaction_id):
-    """查询单条不良反应详情。"""
+    """查询单条不良反应详情。
+
+    Raises:
+        HTTP 403：护士查看他人上报的记录时返回，技师与主任不受限。
+    """
     item = db.session.get(AdverseReaction, reaction_id)
     if not item:
         return fail("不良反应记录不存在", 404)
+    user = current_user()
+    if user and user.role and user.role.code == "nurse" and item.nurse_id != user.id:
+        return fail("仅可查看本人上报的不良反应", 403)
     return ok(item.to_dict())
 
 

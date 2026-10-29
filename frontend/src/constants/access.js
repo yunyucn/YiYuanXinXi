@@ -16,6 +16,7 @@ export const ACCESS = Object.freeze({
   execute: Object.freeze(['nurse']),
   trace: Object.freeze(['doctor', 'nurse', 'tech', 'director']),
   alerts: Object.freeze(['tech', 'director']),
+  alertsHandle: Object.freeze(['tech']),
   adverse: Object.freeze(['nurse', 'tech', 'director']),
   scrapView: Object.freeze(['tech', 'director']),
   scrapApply: Object.freeze(['tech']),

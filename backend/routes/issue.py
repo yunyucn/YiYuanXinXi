@@ -49,8 +49,22 @@ def pending_issues():
 @bp.get("/issues")
 @roles_required("tech", "nurse")
 def list_issues():
-    """分页查询发血记录，支持执行状态、住院号和关键字筛选。"""
+    """分页查询发血记录，支持执行状态、住院号和关键字筛选。
+
+    Notes:
+        护士只能看到病区待执行记录以及本人领血 / 本人执行的记录，
+        技师可查看全部发血记录。
+    """
+    user = current_user()
     query = IssueRecord.query
+    if user and user.role and user.role.code == "nurse":
+        query = query.filter(
+            db.or_(
+                IssueRecord.execution_status == "待执行",
+                IssueRecord.pickup_nurse == user.real_name,
+                IssueRecord.executed_by_id == user.id,
+            )
+        )
     execution_status = request.args.get("execution_status")
     admission_no = request.args.get("admission_no", "").strip()
     keyword = request.args.get("keyword", "").strip()
@@ -75,10 +89,19 @@ def list_issues():
 @bp.get("/issues/<int:issue_id>")
 @roles_required("tech", "nurse")
 def get_issue(issue_id):
-    """查询发血记录详情、关联不良反应和有效配血记录。"""
+    """查询发血记录详情、关联不良反应和有效配血记录。
+
+    Raises:
+        HTTP 403：护士查询非本人经手且非待执行的记录时返回。
+    """
     issue = db.session.get(IssueRecord, issue_id)
     if not issue:
         return fail("发血记录不存在", 404)
+    user = current_user()
+    if user and user.role and user.role.code == "nurse":
+        owned = issue.execution_status == "待执行" or issue.pickup_nurse == user.real_name or issue.executed_by_id == user.id
+        if not owned:
+            return fail("仅可查看本人经手或待执行的血袋记录", 403)
     data = issue.to_dict()
     data["adverse_reactions"] = [item.to_dict() for item in issue.adverse_reactions]
     data["cross_matches"] = [item.to_dict() for item in issue.request.cross_matches if item.is_active]

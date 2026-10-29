@@ -4,9 +4,13 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Refresh, Search, Warning } from '@element-plus/icons-vue'
 import { adverseApi } from '@/api'
+import { useAuthStore } from '@/store/auth'
 import { formatDateTime, severityType } from '@/utils/format'
 
 const router = useRouter()
+const auth = useAuthStore()
+/** 护士只看本人上报记录，技师与主任可看全部。 */
+const scopedToSelf = computed(() => auth.role === 'nurse')
 const loading = ref(false)
 const items = ref([])
 const total = ref(0)
@@ -92,7 +96,7 @@ onMounted(loadItems)
 
 <template>
   <div class="page">
-    <PageHeader title="输血不良反应" description="汇总护士上报的发热、过敏、溶血等输血反应，支持按住院号、储血号、类型和程度筛选">
+    <PageHeader title="输血不良反应" :description="scopedToSelf ? '仅显示本人上报的不良反应记录，支持按住院号、储血号、类型和程度筛选' : '汇总护士上报的发热、过敏、溶血等输血反应，支持按住院号、储血号、类型和程度筛选'">
       <template #actions>
         <el-button :icon="Refresh" :loading="loading" @click="loadItems">刷新</el-button>
       </template>

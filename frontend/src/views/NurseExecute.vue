@@ -180,7 +180,7 @@ onMounted(loadIssues)
 
 <template>
   <div class="page">
-    <PageHeader title="输血执行" description="护士确认输血执行，并在完成后记录输血不良反应；执行时间与记录护士将进入全周期追溯">
+    <PageHeader title="输血执行" description="护士确认输血执行，并在完成后记录输血不良反应；列表仅含病区待执行及本人领血/本人执行的记录，执行时间与记录护士将进入全周期追溯">
       <template #actions>
         <el-button :icon="Refresh" :loading="loading" @click="loadIssues">刷新</el-button>
       </template>
